@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "Wakanda-X",
+    "slug": "wakanda-x",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    // Removed missing icon to avoid asset resolution errors; Expo will use default
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.wakanda.x"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.wakanda.x"
+    },
+    "web": {
+    },
+    "entryPoint": "./index.js",
+    "plugins": [
+      "expo-secure-store",
+      "expo-location",
+      "expo-camera"
+    ],
+    "scheme": "wakanda-x",
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id"
+      }
+    }
+  }
+}

@@ -1,0 +1,65 @@
+Starting project at C:\Users\umara\Desktop\WAKANDA
+Starting Metro Bundler
+Networking has been disabled
+Unable to reach well-known versions endpoint. Using local dependency map expo/bundledNativeModules.json for version validation
+Dependency validation is unreliable in offline-mode
+The following packages should be updated for best compatibility with the installed expo version:
+  @expo/vector-icons@15.0.3 - expected version: ^14.0.0
+  expo-speech@11.6.0 - expected version: ~11.7.0
+  react-native@0.73.0 - expected version: 0.73.6
+Your project may not work correctly until you install the correct versions of the packages.
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+transform[stderr]: (node:7520) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+transform[stderr]: (Use `node --trace-warnings ...` to show where the warning was created)
+transform[stderr]: (node:4980) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+transform[stderr]: (Use `node --trace-warnings ...` to show where the warning was created)
+transform[stderr]: (node:10664) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+transform[stderr]: (Use `node --trace-warnings ...` to show where the warning was created)
+Web Bundling failed 3401ms (C:\Users\umara\Desktop\WAKANDA\node_modules\expo\AppEntry.js)
+error: SyntaxError: C:\Users\umara\Desktop\WAKANDA\src\components\home\BrandCarousel.tsx: Unexpected token (40:2)
+
+  38 |     //   </ScrollView>
+  39 |     // </View>
+> 40 |   );
+     |   ^
+  41 | };
+  42 |
+  43 | const styles = StyleSheet.create({
+Web Bundling failed 7928ms (C:\Users\umara\Desktop\WAKANDA\node_modules\expo\AppEntry.js)
+error: SyntaxError: C:\Users\umara\Desktop\WAKANDA\src\components\home\BrandCarousel.tsx: Unexpected token (40:2)
+
+  38 |     //   </ScrollView>
+  39 |     // </View>
+> 40 |   );
+     |   ^
+  41 | };
+  42 |
+  43 | const styles = StyleSheet.create({
+transform[stderr]: Missing transform.routerRoot option in Metro bundling request, falling back to `app` as routes directory.
+transform[stderr]: (node:2424) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+transform[stderr]: (Use `node --trace-warnings ...` to show where the warning was created)
+transform[stderr]: Missing transform.routerRoot option in Metro bundling request, falling back to `app` as routes directory.
+transform[stderr]: Missing transform.routerRoot option in Metro bundling request, falling back to `app` as routes directory.
+transform[stderr]: Missing transform.routerRoot option in Metro bundling request, falling back to `app` as routes directory.
+Web Bundling failed 30912ms (C:\Users\umara\Desktop\WAKANDA\node_modules\expo\AppEntry.js)
+error: SyntaxError: C:\Users\umara\Desktop\WAKANDA\src\components\home\BrandCarousel.tsx: Unexpected token (40:2)
+
+  38 |     //   </ScrollView>
+  39 |     // </View>
+> 40 |   );
+     |   ^
+  41 | };
+  42 |
+  43 | const styles = StyleSheet.create({
+Web Bundling failed 912ms (C:\Users\umara\Desktop\WAKANDA\node_modules\expo\AppEntry.js)
+error: SyntaxError: C:\Users\umara\Desktop\WAKANDA\src\components\home\BrandCarousel.tsx: Unexpected token (40:2)
+
+  38 |     //   </ScrollView>
+  39 |     // </View>
+> 40 |   );
+     |   ^
+  41 | };
+  42 |
+  43 | const styles = StyleSheet.create({
+Web Bundled 1535ms (C:\Users\umara\Desktop\WAKANDA\node_modules\expo\AppEntry.js)
