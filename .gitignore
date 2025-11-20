@@ -71,3 +71,14 @@ yarn-debug.log*
 yarn-error.log*
 
 WAKANDA2/
+
+# Exclusions requested by user
+homepage detaials/
+MISSING_IMPLEMENTATIONS.md
+IMPLEMENTATION_PROGRESS.md
+Frontend-focus.md
+image-sources.md
+PHASE_20_24_PROGRESS.md
+wakanda.plan.md
+Wakanda Prompt.md
+WAKANDA Prompt.docx
