@@ -103,7 +103,8 @@ export const BulkOrderModal: React.FC<BulkOrderModalProps> = ({
                 <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     {hasVariants ? (
                         variants.map((variant) => {
-                            const variantImage = variant.image || product.images?.[0] || product.image_url;
+                            const rawVariantImage = variant.image || product.images?.[0] || product.image_url;
+                            const variantImage = (typeof rawVariantImage === 'string' && rawVariantImage.length > 0) ? rawVariantImage : undefined;
                             const colorAttr = variant.attributes?.color || variant.attributes?.Color;
 
                             return (

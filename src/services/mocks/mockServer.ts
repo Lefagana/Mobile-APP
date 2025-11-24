@@ -961,7 +961,7 @@ export const mockServer = {
   auth: {
     requestOTP: async (phone: string): Promise<{ otp_session_id: string; ttl_seconds: number; otp?: string }> => {
       await delay(1500);
-      
+
       const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const otp = generateOTP();
       const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
@@ -981,7 +981,7 @@ export const mockServer = {
       await delay(1200);
 
       const session = otpSessions.get(sessionId);
-      
+
       if (!session) {
         throw new Error('Invalid session ID');
       }
@@ -1070,7 +1070,7 @@ export const mockServer = {
 
     getReviews: async (productId: string, page: number = 1): Promise<ReviewListResponse> => {
       await delay(600);
-      
+
       // Mock reviews for products
       const mockReviews: ProductReview[] = [
         {
@@ -1145,7 +1145,7 @@ export const mockServer = {
       const start = (page - 1) * perPage;
       const end = start + perPage;
       const paginatedReviews = mockReviews.slice(start, end);
-      
+
       const averageRating = mockReviews.reduce((sum, r) => sum + r.rating, 0) / mockReviews.length;
 
       return {
@@ -1161,7 +1161,7 @@ export const mockServer = {
 
     getRelated: async (productId: string, limit: number = 6): Promise<Product[]> => {
       await delay(500);
-      
+
       const product = mockProducts.find((p) => p.id === productId);
       if (!product) {
         return [];
@@ -1277,7 +1277,7 @@ export const mockServer = {
       return {
         balance,
         currency: 'NGN',
-        transactions: transactions.sort((a, b) => 
+        transactions: transactions.sort((a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         ),
       };
@@ -1285,7 +1285,7 @@ export const mockServer = {
 
     topUp: async (userId: string, amount: number, method: string = 'paystack'): Promise<WalletTransaction> => {
       await delay(1500);
-      
+
       const newTransaction: WalletTransaction = {
         id: `txn_${Date.now()}`,
         type: 'credit',
@@ -1316,7 +1316,7 @@ export const mockServer = {
     transactions: async (userId: string, params?: { limit?: number; offset?: number }): Promise<WalletTransaction[]> => {
       await delay(500);
       const transactions = mockWalletTransactions[userId] || [];
-      const sorted = transactions.sort((a, b) => 
+      const sorted = transactions.sort((a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
 
@@ -1347,7 +1347,7 @@ export const mockServer = {
     messages: async (chatId: string, params?: { limit?: number; offset?: number }): Promise<Message[]> => {
       await delay(500);
       const messages = mockMessages[chatId] || [];
-      const sorted = messages.sort((a, b) => 
+      const sorted = messages.sort((a, b) =>
         new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       );
 
@@ -1360,7 +1360,7 @@ export const mockServer = {
 
     sendMessage: async (chatId: string, senderId: string, content: string): Promise<Message> => {
       await delay(800);
-      
+
       const newMessage: Message = {
         id: `msg_${Date.now()}`,
         chat_id: chatId,
@@ -1414,7 +1414,7 @@ export const mockServer = {
       }
 
       // Sort by created_at descending (newest first)
-      filtered.sort((a, b) => 
+      filtered.sort((a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
 
@@ -1455,3 +1455,7 @@ export const mockServer = {
     },
   },
 };
+
+
+
+

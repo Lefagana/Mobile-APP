@@ -64,6 +64,7 @@ export type CustomerStackParamList = {
   };
   Confirmation: {
     orderId: string;
+    isBuyNowOrder?: boolean; // CRITICAL: Flag to prevent cart clearing for Buy Now orders
   };
   OrdersList: undefined;
   OrderDetail: {

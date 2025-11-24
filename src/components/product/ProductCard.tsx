@@ -7,6 +7,7 @@ import { useCart } from '../../contexts/CartContext';
 import { useAuthGuard } from '../../utils/authGuard';
 import { LoginPromptModal } from '../common';
 import { useLocalization } from '../../contexts/LocalizationContext';
+import { getProductImageSource } from '../../utils/productImages';
 
 export interface ProductCardProps {
   product: Product;
@@ -67,10 +68,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     }, 'add items to cart');
   };
 
+  // Try to get local image first, fallback to remote URLs
   const displayImage =
     imageSource ||
-    (product.image_url ? { uri: product.image_url } : undefined) ||
+    getProductImageSource(product.id, product.image_url) ||
     (product.images?.[0] ? { uri: product.images[0] } : undefined);
+
   const price = product.variants?.[0]?.price || product.price || 0;
   const vendorName = product.vendor?.shop_name || product.vendor_name || 'Store';
 

@@ -43,7 +43,8 @@ export const FeaturedProductsBanner: React.FC<FeaturedProductsBannerProps> = ({
         scrollEventThrottle={16}
       >
         {products.map((product, index) => {
-          const imageUri = product.image_url || product.images?.[0];
+          const rawImageUri = product.image_url || product.images?.[0];
+          const imageUri = (typeof rawImageUri === 'string' && rawImageUri.length > 0) ? rawImageUri : undefined;
           return (
             <TouchableOpacity
               key={product.id}

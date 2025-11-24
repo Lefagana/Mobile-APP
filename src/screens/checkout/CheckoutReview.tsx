@@ -215,11 +215,13 @@ const CheckoutReview: React.FC = () => {
         // Navigate directly to confirmation
         navigation.replace('Confirmation', {
           orderId: orderResponse.order_id,
+          isBuyNowOrder: !!buyNowData, // CRITICAL: Flag to prevent cart clearing
         });
       } else {
         // For COD and USSD, order is created but payment pending
         navigation.replace('Confirmation', {
           orderId: orderResponse.order_id,
+          isBuyNowOrder: !!buyNowData, // CRITICAL: Flag to prevent cart clearing
         });
       }
     } catch (error: any) {

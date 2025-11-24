@@ -96,7 +96,8 @@ const ProductDetail: React.FC = () => {
   });
 
   const displayPrice = selectedVariant?.price || product?.price || 0;
-  const displayImages = product?.images || (product?.image_url ? [product.image_url] : []);
+  const displayImages = (product?.images || (product?.image_url ? [product.image_url] : []))
+    .filter((img): img is string => typeof img === 'string' && img.length > 0);
   const hasVariants = product?.variants && product.variants.length > 0;
 
   const handleVariantSelect = useCallback((variant: ProductVariant) => {

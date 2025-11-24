@@ -55,14 +55,17 @@ const Confirmation: React.FC = () => {
     );
     opacity.value = withTiming(1, { duration: 500 });
 
-    // Clear cart after successful order
-    clearCart();
+    // CRITICAL: Only clear cart if this is NOT a Buy Now order
+    const { isBuyNowOrder } = route.params;
+    if (!isBuyNowOrder) {
+      clearCart();
+    }
 
     // Auto-hide animation after 2 seconds
     setTimeout(() => {
       setShowAnimation(false);
     }, 2000);
-  }, []);
+  }, [clearCart, route.params]);
 
   const animatedCheckmarkStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],

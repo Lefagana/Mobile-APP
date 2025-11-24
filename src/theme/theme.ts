@@ -1,5 +1,17 @@
 import { MD3LightTheme, MD3DarkTheme, configureFonts } from 'react-native-paper';
-import type { MD3Theme } from 'react-native-paper';
+import type { MD3Theme, MD3Colors } from 'react-native-paper';
+
+// Extend MD3Colors to include custom colors
+declare module 'react-native-paper' {
+  interface MD3Colors {
+    success: string;
+    warning: string;
+    info: string;
+    border: string;
+    divider: string;
+    placeholder: string;
+  }
+}
 
 // Custom font configuration - Industrial Standard / Premium Feel
 // Using system fonts but with optimized weights and spacing
