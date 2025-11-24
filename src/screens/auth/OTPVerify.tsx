@@ -27,6 +27,7 @@ const OTPVerify: React.FC = () => {
   const [resendTimer, setResendTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
   const [devOTP, setDevOTP] = useState<string | undefined>(otpCode); // Store OTP for dev display
+  const inputRef = useRef<any>(null);
 
   const handleVerifyOTP = async (code?: string) => {
     const codeToVerify = code || otp;
@@ -160,24 +161,58 @@ const OTPVerify: React.FC = () => {
           </View>
         ) : null}
 
-        <TextInput
-          label="OTP Code"
-          value={otp}
-          onChangeText={(text) => {
-            // Only allow digits, max 6
-            const digitsOnly = text.replace(/[^0-9]/g, '').slice(0, 6);
-            setOtp(digitsOnly);
-            setError('');
-          }}
-          keyboardType="number-pad"
-          mode="outlined"
-          style={styles.input}
-          error={!!error}
-          disabled={loading}
-          maxLength={6}
-          autoFocus
-          selectTextOnFocus
-        />
+        <View style={styles.otpContainer}>
+          {/* Hidden Input for Keyboard Handling */}
+          <TextInput
+            ref={inputRef}
+            value={otp}
+            onChangeText={(text) => {
+              const digitsOnly = text.replace(/[^0-9]/g, '').slice(0, 6);
+              setOtp(digitsOnly);
+              setError('');
+            }}
+            keyboardType="number-pad"
+            maxLength={6}
+            autoFocus
+            caretHidden
+            style={styles.hiddenInput}
+          />
+
+          {/* Visual Boxes */}
+          <View style={styles.boxesContainer}>
+            {[0, 1, 2, 3, 4, 5].map((index) => {
+              const digit = otp[index] || '';
+              const isFocused = index === otp.length;
+              return (
+                <View
+                  key={index}
+                  style={[
+                    styles.box,
+                    {
+                      borderColor: error
+                        ? theme.colors.error
+                        : isFocused
+                          ? theme.colors.primary
+                          : theme.colors.outline,
+                      backgroundColor: theme.colors.surface,
+                    },
+                  ]}
+                  onTouchEnd={() => inputRef.current?.focus()}
+                >
+                  <Text
+                    variant="headlineMedium"
+                    style={[
+                      styles.boxText,
+                      { color: theme.colors.onSurface },
+                    ]}
+                  >
+                    {digit}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        </View>
 
         {error ? (
           <Text style={[styles.errorText, { color: theme.colors.error }]}>
@@ -243,11 +278,33 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     fontWeight: '600',
   },
-  input: {
-    marginBottom: 16,
-    fontSize: 24,
+  otpContainer: {
+    marginBottom: 24,
+    alignItems: 'center',
+  },
+  hiddenInput: {
+    position: 'absolute',
+    width: 1,
+    height: 1,
+    opacity: 0,
+  },
+  boxesContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    width: '100%',
+  },
+  box: {
+    width: 45,
+    height: 56,
+    borderWidth: 2,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  boxText: {
+    fontWeight: 'bold',
     textAlign: 'center',
-    letterSpacing: 8,
   },
   errorText: {
     marginBottom: 16,

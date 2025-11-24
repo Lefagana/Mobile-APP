@@ -21,7 +21,6 @@ import {
   CategoryTabs,
   FeaturedProductsBanner,
   AICartFAB,
-  VoiceBottomBar,
   AIPersonsChoice,
   type MartType,
 } from '../../components/home';
@@ -59,7 +58,7 @@ const HomeFeed: React.FC = () => {
             }, 2000);
           }
         }
-      } catch {}
+      } catch { }
     })();
     return () => { mounted = false; if (timer) clearTimeout(timer); };
   }, [user]);
@@ -221,8 +220,8 @@ const HomeFeed: React.FC = () => {
           scrollEnabled={true}
         />
       </View>
-      {/* AI Voice Section - Fixed at bottom - Always visible */}
-      <VoiceBottomBar />
+
+      {/* VoiceBottomBar is now global in MainLayout */}
 
       {isFocused && products.length > 0 && (
         <AICartFAB onPress={handleAICartPress} visible={true} />
@@ -249,7 +248,7 @@ const styles = StyleSheet.create({
     ...(Platform.OS === 'web' && { minHeight: 0 }),
   },
   contentContainer: {
-    paddingBottom: 90, // Extra padding for AI Voice footer
+    paddingBottom: 16, // Reduced padding since ScreenContainer handles it
     flexGrow: 1,
   },
   productItem: {

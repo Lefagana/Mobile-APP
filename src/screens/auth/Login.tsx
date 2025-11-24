@@ -134,6 +134,19 @@ const Login: React.FC = () => {
           {t('auth.forgotPassword') || 'Forgot password?'}
         </Button>
 
+        <View style={styles.signupContainer}>
+          <Text variant="bodyMedium" style={styles.signupText}>
+            {t('auth.dontHaveAccount') || 'Don\'t have an account?'}
+          </Text>
+          <Button
+            mode="text"
+            onPress={() => navigation.navigate('RoleSelector')}
+            compact
+          >
+            {t('auth.register') || 'Register'}
+          </Button>
+        </View>
+
         <Divider style={{ marginVertical: 12 }} />
 
         <Button mode="outlined" icon="google" onPress={() => setError('Google mock: not implemented')} style={styles.button}>

@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Image, ImageSourcePropType } from 'react-native';
-import { Text, Button, useTheme } from 'react-native-paper';
+import React, { useRef } from 'react';
+import { View, StyleSheet, TouchableOpacity, Image, ImageSourcePropType, Animated, Platform } from 'react-native';
+import { Text, Button, useTheme, Surface } from 'react-native-paper';
 import { Product } from '../../types';
 import { formatCurrency } from '../../utils/formatters';
 import { useCart } from '../../contexts/CartContext';
@@ -34,6 +34,25 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     dismissLoginPrompt,
   } = useAuthGuard();
 
+  // Animation value for press effect
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.96,
+      useNativeDriver: true,
+      speed: 20,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 20,
+    }).start();
+  };
+
   const handlePress = () => {
     if (onPress) {
       onPress(product);
@@ -57,70 +76,144 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   if (variant === 'list') {
     return (
+      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+        <TouchableOpacity
+          onPress={handlePress}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          activeOpacity={1}
+          accessibilityRole="button"
+          accessibilityLabel={`${product.name || product.title} from ${vendorName}, price ${formatCurrency(price)}`}
+          accessibilityHint="Double tap to view product details"
+        >
+          <Surface style={[styles.listContainer, { backgroundColor: theme.colors.surface, borderRadius: theme.borderRadius.md }]} elevation={1}>
+            <View style={styles.listImageContainer}>
+              {displayImage && (
+                <Image
+                  source={displayImage}
+                  style={styles.listImage}
+                  resizeMode="cover"
+                  accessibilityLabel={`${product.name || product.title} product image`}
+                  accessibilityRole="image"
+                  onError={() => { }}
+                />
+              )}
+              {product.is_low_price && (
+                <View style={[styles.lowPriceBadge, { backgroundColor: theme.colors.error }]}>
+                  <Text variant="labelSmall" style={styles.lowPriceText}>{t('home.lowPrice')}</Text>
+                </View>
+              )}
+            </View>
+            <View style={styles.listContent}>
+              <Text variant="labelSmall" style={[styles.vendorName, { color: theme.colors.onSurfaceVariant }]}>
+                {vendorName}
+              </Text>
+              <Text variant="titleMedium" style={[styles.productTitle, { color: theme.colors.onSurface }]} numberOfLines={2}>
+                {product.name || product.title}
+              </Text>
+              <Text variant="titleLarge" style={[styles.price, { color: theme.colors.primary }]}>
+                {formatCurrency(price)}
+              </Text>
+
+              {showAddToCart && (
+                <Button
+                  mode="contained-tonal"
+                  onPress={handleAddToCart}
+                  style={styles.addButton}
+                  contentStyle={{ height: 36 }}
+                  labelStyle={{ fontSize: 12 }}
+                  compact
+                  accessibilityLabel={`${t('home.addToCart')}: ${product.name || product.title}`}
+                  accessibilityRole="button"
+                >
+                  {t('home.addToCart')}
+                </Button>
+              )}
+            </View>
+          </Surface>
+
+          <LoginPromptModal
+            visible={showLoginPrompt}
+            onDismiss={dismissLoginPrompt}
+            message={actionMessage}
+            onLoginSuccess={handleLoginSuccess}
+          />
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  }
+
+  // Grid variant (default)
+  return (
+    <Animated.View style={{ transform: [{ scale: scaleAnim }], flex: 1 }}>
       <TouchableOpacity
         onPress={handlePress}
-        style={[
-          styles.listContainer,
-          {
-            backgroundColor: theme.colors.surface,
-            borderColor: theme.colors.outlineVariant,
-          },
-        ]}
-        activeOpacity={0.7}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={1}
+        style={{ flex: 1 }}
         accessibilityRole="button"
         accessibilityLabel={`${product.name || product.title} from ${vendorName}, price ${formatCurrency(price)}`}
         accessibilityHint="Double tap to view product details"
       >
-        <View style={styles.listImageContainer}>
-          {displayImage && (
-            <Image 
-              source={displayImage} 
-              style={styles.listImage} 
-              resizeMode="cover"
-              accessibilityLabel={`${product.name || product.title} product image`}
-              accessibilityRole="image"
-              onError={() => {
-                // Silently handle image loading errors
-              }}
-            />
-          )}
-          {product.is_low_price && (
-            <View style={[styles.lowPriceBadge, { backgroundColor: theme.colors.error }]}> 
-              <Text variant="labelSmall" style={styles.lowPriceText}>{t('home.lowPrice')}</Text>
-            </View>
-          )}
-        </View>
-        <View style={styles.listContent}>
-          <Text variant="labelSmall" style={[styles.vendorName, { color: theme.colors.onSurfaceVariant }]}>
-            {vendorName}
-          </Text>
-          <Text variant="bodyMedium" style={[styles.productTitle, { color: theme.colors.onSurface }]} numberOfLines={2}>
-            {product.name || product.title}
-          </Text>
-          <Text variant="titleMedium" style={[styles.price, { color: theme.colors.primary }]}>
-            {formatCurrency(price)}
-          </Text>
-          <View style={[styles.storeChip, { backgroundColor: theme.colors.surfaceVariant }]}>
-            <Text variant="labelSmall" style={[styles.storeChipText, { color: theme.colors.onSurfaceVariant }]}>
+        <Surface style={[styles.gridContainer, { backgroundColor: theme.colors.surface, borderRadius: theme.borderRadius.lg }]} elevation={2}>
+          <View style={styles.imageContainer}>
+            {displayImage ? (
+              <Image
+                source={displayImage}
+                style={styles.image}
+                resizeMode="cover"
+                accessibilityLabel={`${product.name || product.title} product image`}
+                accessibilityRole="image"
+                onError={() => { }}
+              />
+            ) : (
+              <View
+                style={[styles.imagePlaceholder, { backgroundColor: theme.colors.surfaceVariant }]}
+              >
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  No Image
+                </Text>
+              </View>
+            )}
+            {product.is_low_price && (
+              <View style={[styles.lowPriceBadgeAbsolute, { backgroundColor: theme.colors.error }]}>
+                <Text style={styles.lowPriceText}>{t('home.lowPrice')}</Text>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.content}>
+            <Text variant="labelSmall" style={[styles.vendorName, { color: theme.colors.onSurfaceVariant }]} numberOfLines={1}>
               {vendorName}
             </Text>
-          </View>
-          {showAddToCart && (
-            <Button
-              mode="contained-tonal"
-              onPress={handleAddToCart}
-              style={styles.addButton}
-              compact
-              accessibilityLabel={`${t('home.addToCart')}: ${product.name || product.title}`}
-              accessibilityRole="button"
-              accessibilityHint={t('cart.title')}
-            >
-              {t('home.addToCart')}
-            </Button>
-          )}
-        </View>
+            <Text variant="bodyMedium" style={[styles.productTitle, { color: theme.colors.onSurface }]} numberOfLines={2}>
+              {product.name || product.title}
+            </Text>
+            <View style={styles.priceRow}>
+              <Text variant="titleMedium" style={[styles.price, { color: theme.colors.primary, marginBottom: 0 }]}>
+                {formatCurrency(price)}
+              </Text>
 
-        {/* Login Prompt Modal */}
+              {showAddToCart && (
+                <Button
+                  mode="contained"
+                  onPress={handleAddToCart}
+                  style={styles.addButton}
+                  contentStyle={{ height: 32, width: 32 }}
+                  labelStyle={{ marginHorizontal: 0, marginVertical: 0 }}
+                  compact
+                  icon="cart"
+                  accessibilityLabel={`${t('home.addToCart')}: ${product.name || product.title}`}
+                  accessibilityRole="button"
+                >
+                  {""}
+                </Button>
+              )}
+            </View>
+          </View>
+        </Surface>
+
         <LoginPromptModal
           visible={showLoginPrompt}
           onDismiss={dismissLoginPrompt}
@@ -128,150 +221,59 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           onLoginSuccess={handleLoginSuccess}
         />
       </TouchableOpacity>
-    );
-  }
-
-  // Grid variant (default)
-  return (
-    <TouchableOpacity
-      onPress={handlePress}
-      style={[
-        styles.gridContainer,
-        {
-          backgroundColor: theme.colors.surface,
-          borderColor: theme.colors.outlineVariant,
-        },
-      ]}
-      activeOpacity={0.7}
-      accessibilityRole="button"
-      accessibilityLabel={`${product.name || product.title} from ${vendorName}, price ${formatCurrency(price)}`}
-      accessibilityHint="Double tap to view product details"
-    >
-      <View style={styles.header}>
-        <Text variant="labelSmall" style={[styles.vendorName, { color: theme.colors.onSurfaceVariant }]} numberOfLines={1}>
-          {vendorName}
-        </Text>
-        {product.is_low_price && (
-          <View style={[styles.lowPriceBadge, { backgroundColor: theme.colors.error }]}> 
-            <Text style={styles.lowPriceText}>{t('home.lowPrice')}</Text>
-          </View>
-        )}
-      </View>
-
-      <View style={styles.imageContainer}>
-        {displayImage ? (
-          <Image 
-            source={displayImage} 
-            style={styles.image} 
-            resizeMode="cover"
-            accessibilityLabel={`${product.name || product.title} product image`}
-            accessibilityRole="image"
-            onError={() => {
-              // Silently handle image loading errors
-            }}
-          />
-        ) : (
-          <View
-            style={[styles.imagePlaceholder, { backgroundColor: theme.colors.surfaceVariant }]}
-            accessibilityLabel="Product image not available"
-            accessibilityRole="image"
-          >
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-              No Image
-            </Text>
-          </View>
-        )}
-      </View>
-
-      <View style={styles.content}>
-        <Text variant="bodySmall" style={[styles.productTitle, { color: theme.colors.onSurface }]} numberOfLines={2}>
-          {product.name || product.title}
-        </Text>
-        <Text variant="titleSmall" style={[styles.price, { color: theme.colors.primary }]}>
-          {formatCurrency(price)}
-        </Text>
-        <View style={[styles.storeChip, { backgroundColor: theme.colors.surfaceVariant }]}>
-          <Text variant="labelSmall" style={[styles.storeChipText, { color: theme.colors.onSurfaceVariant }]}>
-            {vendorName}
-          </Text>
-        </View>
-        {showAddToCart && (
-          <Button
-            mode="contained-tonal"
-            onPress={handleAddToCart}
-            style={styles.addButton}
-            compact
-            accessibilityLabel={`${t('home.addToCart')}: ${product.name || product.title}`}
-            accessibilityRole="button"
-            accessibilityHint={t('cart.title')}
-          >
-            {t('home.addToCart')}
-          </Button>
-        )}
-      </View>
-
-      {/* Login Prompt Modal */}
-      <LoginPromptModal
-        visible={showLoginPrompt}
-        onDismiss={dismissLoginPrompt}
-        message={actionMessage}
-        onLoginSuccess={handleLoginSuccess}
-      />
-    </TouchableOpacity>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   gridContainer: {
-    borderRadius: 12,
-    borderWidth: 1,
     overflow: 'hidden',
     marginBottom: 16,
+    flex: 1,
   },
   listContainer: {
     flexDirection: 'row',
-    borderRadius: 12,
-    borderWidth: 1,
     overflow: 'hidden',
     marginBottom: 12,
     padding: 12,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingTop: 8,
-  },
   vendorName: {
-    fontSize: 10,
-    flex: 1,
+    marginBottom: 2,
+    opacity: 0.8,
   },
   lowPriceBadge: {
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 10,
-    marginLeft: 4,
+    borderRadius: 4,
+    marginTop: 4,
+    alignSelf: 'flex-start',
+  },
+  lowPriceBadgeAbsolute: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    zIndex: 1,
   },
   lowPriceText: {
     color: '#FFFFFF',
-    fontSize: 8,
+    fontSize: 10,
     fontWeight: 'bold',
   },
   imageContainer: {
     width: '100%',
-    height: 150,
-    marginVertical: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+    aspectRatio: 1,
+    backgroundColor: '#f0f0f0',
+    position: 'relative',
   },
   listImageContainer: {
     width: 100,
     height: 100,
     borderRadius: 8,
     overflow: 'hidden',
-    marginRight: 12,
-    position: 'relative',
+    marginRight: 16,
   },
   image: {
     width: '100%',
@@ -288,34 +290,32 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   content: {
-    padding: 8,
+    padding: 12,
+    flex: 1,
+    justifyContent: 'space-between',
   },
   listContent: {
     flex: 1,
+    justifyContent: 'space-between',
   },
   productTitle: {
     marginBottom: 4,
-    minHeight: 32,
+    fontWeight: '500',
+    minHeight: 40,
   },
   price: {
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  storeChip: {
-    alignSelf: 'flex-start',
+    fontWeight: '700',
     marginBottom: 8,
-    height: 24,
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  storeChipText: {
-    fontSize: 10,
   },
   addButton: {
-    width: '100%',
+    borderRadius: 100,
+    minWidth: 0,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
   },
 });
 

@@ -49,6 +49,11 @@ export type CustomerStackParamList = {
   CheckoutReview: {
     paymentMethod?: string;
     selectedDriver?: any;
+    buyNowProduct?: {
+      product: any; // Product type
+      variant?: any; // ProductVariant type
+      quantity: number;
+    };
   };
   AddressSelection: undefined;
   LocalDeliveryDrivers: undefined;
@@ -105,6 +110,6 @@ export type RootStackParamList = {
 
 declare global {
   namespace ReactNavigation {
-    interface RootParamList extends RootStackParamList {}
+    interface RootParamList extends RootStackParamList { }
   }
 }

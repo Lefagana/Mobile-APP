@@ -29,9 +29,9 @@ export const LoginPromptModal: React.FC<LoginPromptModalProps> = ({
   const handleLogin = () => {
     // Dismiss modal immediately before navigation
     onDismiss();
-    // Navigate to RoleSelector (first onboarding page)
+    // Navigate to Login page directly
     navigation.navigate('Auth', {
-      screen: 'RoleSelector',
+      screen: 'Login',
       params: undefined,
     });
     // Call onLoginSuccess after navigation if needed

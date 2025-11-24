@@ -113,8 +113,32 @@ const CheckoutReview: React.FC = () => {
     }
   }, [driverParam]);
 
+  // Get buyNowProduct from route params
+  const buyNowData = (route.params as any)?.buyNowProduct;
+
+  // Determine checkout items: Buy Now product OR cart items
+  const checkoutItems = React.useMemo(() => {
+    if (buyNowData) {
+      // Buy Now flow: single product
+      return [{
+        product_id: buyNowData.product.id,
+        product: buyNowData.product,
+        variant_id: buyNowData.variant?.id,
+        quantity: buyNowData.quantity,
+        price: buyNowData.variant?.price || buyNowData.product.price || 0,
+      }];
+    }
+    // Regular cart checkout
+    return cart.items;
+  }, [buyNowData, cart.items]);
+
+  // Calculate total from checkout items
+  const checkoutTotal = React.useMemo(() => {
+    return checkoutItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  }, [checkoutItems]);
+
   const handlePlaceOrder = useCallback(async () => {
-    if (cart.items.length === 0) return;
+    if (checkoutItems.length === 0) return;
 
     setIsProcessing(true);
     let orderData: any;
@@ -122,7 +146,7 @@ const CheckoutReview: React.FC = () => {
       // Prepare order data
       orderData = {
         user_id: user?.id || 'user_001',
-        items: cart.items.map(item => ({
+        items: checkoutItems.map(item => ({
           product_id: item.product_id,
           qty: item.quantity,
           price: item.price,
@@ -201,7 +225,7 @@ const CheckoutReview: React.FC = () => {
     } catch (error: any) {
       setIsProcessing(false);
       console.error('Failed to place order:', error);
-      
+
       // If error and offline, try to queue it
       if (!isOnline) {
         try {
@@ -216,7 +240,7 @@ const CheckoutReview: React.FC = () => {
           console.error('Failed to queue order:', queueError);
         }
       }
-      
+
       Alert.alert(
         'Order Failed',
         error?.message || 'Unable to place order. Please try again.',
@@ -279,11 +303,11 @@ const CheckoutReview: React.FC = () => {
           <View style={styles.sectionHeader}>
             <IconButton icon="package-variant" size={24} iconColor={theme.colors.primary} />
             <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-              Order Items ({cart.items.length})
+              Order Items ({checkoutItems.length})
             </Text>
           </View>
           <Divider style={styles.divider} />
-          {cart.items.map((item, index) => {
+          {checkoutItems.map((item, index) => {
             const product = item.product as Product;
             return (
               <View key={`${item.product_id}-${item.variant_id || 'default'}-${index}`}>
@@ -305,7 +329,7 @@ const CheckoutReview: React.FC = () => {
                     {formatCurrency(item.price * item.quantity, product.currency || 'NGN')}
                   </Text>
                 </View>
-                {index < cart.items.length - 1 && <Divider style={styles.itemDivider} />}
+                {index < checkoutItems.length - 1 && <Divider style={styles.itemDivider} />}
               </View>
             );
           })}
@@ -595,7 +619,7 @@ const CheckoutReview: React.FC = () => {
               Subtotal
             </Text>
             <Text variant="bodyLarge" style={{ color: theme.colors.onSurface }}>
-              {formatCurrency(cart.subtotal, 'NGN')}
+              {formatCurrency(checkoutTotal, 'NGN')}
             </Text>
           </View>
 
@@ -628,7 +652,7 @@ const CheckoutReview: React.FC = () => {
               Total
             </Text>
             <Text variant="titleLarge" style={{ color: theme.colors.primary, fontWeight: 'bold' }}>
-              {formatCurrency(cart.total, 'NGN')}
+              {formatCurrency(checkoutTotal + (cart.delivery_fee || 0) - (cart.discount || 0), 'NGN')}
             </Text>
           </View>
         </Card>
@@ -638,19 +662,19 @@ const CheckoutReview: React.FC = () => {
             mode="contained"
             onPress={handlePlaceOrder}
             loading={isProcessing}
-            disabled={(isProcessing || queueProcessing) || cart.items.length === 0}
+            disabled={(isProcessing || queueProcessing) || checkoutItems.length === 0}
             icon="check"
             style={styles.placeOrderButton}
-            accessibilityLabel={`Place order, total ${formatCurrency(cart.total, 'NGN')}`}
+            accessibilityLabel={`Place order, total ${formatCurrency(checkoutTotal + (cart.delivery_fee || 0) - (cart.discount || 0), 'NGN')}`}
             accessibilityRole="button"
             accessibilityHint="Places your order and processes payment"
-            accessibilityState={{ disabled: (isProcessing || queueProcessing) || cart.items.length === 0 }}
+            accessibilityState={{ disabled: (isProcessing || queueProcessing) || checkoutItems.length === 0 }}
           >
             {isProcessing || queueProcessing
               ? isOnline
                 ? 'Placing Order...'
                 : 'Queuing Order...'
-              : `Place Order - ${formatCurrency(cart.total, 'NGN')}`}
+              : `Place Order - ${formatCurrency(checkoutTotal + (cart.delivery_fee || 0) - (cart.discount || 0), 'NGN')}`}
           </Button>
         </View>
       </ScrollView>

@@ -25,6 +25,7 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { StackNavigationProp } from '@react-navigation/stack';
+import type { RouteProp } from '@react-navigation/native';
 import type { CustomerStackParamList } from '../../navigation/types';
 import { ScreenContainer, ErrorState, EmptyState, LoginPromptModal } from '../../components/common';
 import { Product, ProductVariant, ProductReview } from '../../types';
@@ -32,15 +33,11 @@ import { api } from '../../services/api';
 import { useCart } from '../../contexts/CartContext';
 import { formatCurrency, formatRelativeTime } from '../../utils/formatters';
 import { useAuthGuard } from '../../utils/authGuard';
-import { ProductCard } from '../../components/product';
+import { ProductCard, BulkOrderModal, BuyNowSheet } from '../../components/product';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-type ProductDetailRouteProp = {
-  params: {
-    productId: string;
-  };
-};
+type ProductDetailRouteProp = RouteProp<CustomerStackParamList, 'ProductDetail'>;
 
 type ProductDetailNavigationProp = StackNavigationProp<CustomerStackParamList, 'ProductDetail'>;
 
@@ -64,6 +61,8 @@ const ProductDetail: React.FC = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [reviewsPage, setReviewsPage] = useState(1);
   const [contactMenuVisible, setContactMenuVisible] = useState(false);
+  const [bulkOrderVisible, setBulkOrderVisible] = useState(false);
+  const [buyNowSheetVisible, setBuyNowSheetVisible] = useState(false);
 
   // Fetch product details
   const {
@@ -127,12 +126,57 @@ const ProductDetail: React.FC = () => {
     if (!product) return;
 
     requireAuth(() => {
-      addItem(product, quantity, selectedVariant?.id);
-      // Navigate to checkout
-      // navigation.navigate('CheckoutReview');
-      console.log('Navigate to checkout');
+      // If product has variants and none selected, show sheet for selection
+      if (hasVariants && !selectedVariant) {
+        setBuyNowSheetVisible(true);
+        return;
+      }
+
+      // Otherwise, navigate directly to checkout with Buy Now product
+      navigation.navigate('CheckoutReview', {
+        buyNowProduct: {
+          product,
+          variant: selectedVariant || undefined,
+          quantity,
+        },
+      });
     }, 'purchase items');
-  }, [product, quantity, selectedVariant, addItem, requireAuth]);
+  }, [product, selectedVariant, quantity, hasVariants, navigation, requireAuth]);
+
+  const handleBuyNowConfirm = useCallback((variant?: ProductVariant, qty?: number) => {
+    setBuyNowSheetVisible(false);
+
+    navigation.navigate('CheckoutReview', {
+      buyNowProduct: {
+        product: product!,
+        variant,
+        quantity: qty || 1,
+      },
+    });
+  }, [product, navigation]);
+
+  const handleBulkAddToCart = useCallback((items: { variantId?: string; quantity: number }[]) => {
+    if (!product) return;
+
+    requireAuth(() => {
+      items.forEach(({ variantId, quantity }) => {
+        addItem(product, quantity, variantId);
+      });
+      console.log(`Added ${items.length} variants to cart`);
+    }, 'add items to cart');
+  }, [product, addItem, requireAuth]);
+
+  const handleBulkBuyNow = useCallback((items: { variantId?: string; quantity: number }[]) => {
+    if (!product) return;
+
+    requireAuth(() => {
+      items.forEach(({ variantId, quantity }) => {
+        addItem(product, quantity, variantId);
+      });
+      // Navigate to checkout with all selected items
+      navigation.navigate('CheckoutReview', {});
+    }, 'purchase items');
+  }, [product, addItem, requireAuth, navigation]);
 
   const handleShare = useCallback(async () => {
     if (!product) return;
@@ -207,6 +251,19 @@ const ProductDetail: React.FC = () => {
             style={styles.mainImage}
             resizeMode="cover"
           />
+          {/* Favorites Overlay */}
+          <View style={styles.favoriteOverlay}>
+            <IconButton
+              icon="heart-outline"
+              size={24}
+              iconColor="#FFFFFF"
+              onPress={() => console.log('Add to favorites')}
+              accessibilityLabel="Add to favorites"
+              accessibilityRole="button"
+              accessibilityHint="Adds this product to your favorites"
+              style={styles.favoriteButton}
+            />
+          </View>
         </View>
 
         {/* Thumbnail Gallery */}
@@ -276,11 +333,29 @@ const ProductDetail: React.FC = () => {
   const renderReviewsSection = () => {
     if (isLoadingReviews) {
       return (
+
+
         <View style={styles.section}>
           <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
             Reviews
           </Text>
           <ActivityIndicator size="small" color={theme.colors.primary} />
+
+          {/* Rating */}
+          {product.rating && (
+            <View style={styles.ratingRow}>
+              <IconButton icon="star" size={20} iconColor="#FFD700" />
+              <Text variant="bodyLarge" style={{ color: theme.colors.onSurface }}>
+                {product.rating.toFixed(1)}
+              </Text>
+              {product.review_count && (
+                <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                  ({product.review_count} reviews)
+                </Text>
+              )}
+            </View>
+          )}
+
         </View>
       );
     }
@@ -473,8 +548,8 @@ const ProductDetail: React.FC = () => {
             accessibilityRole="button"
             accessibilityHint="Decreases the quantity by one"
           />
-          <Text 
-            variant="titleMedium" 
+          <Text
+            variant="titleMedium"
             style={{ color: theme.colors.onSurface, minWidth: 40, textAlign: 'center' }}
             accessibilityRole="text"
             accessibilityLabel={`Quantity: ${quantity}`}
@@ -552,25 +627,7 @@ const ProductDetail: React.FC = () => {
               )}
             </View>
             <View style={styles.headerActions}>
-              <Menu
-                visible={contactMenuVisible}
-                onDismiss={() => setContactMenuVisible(false)}
-                anchor={
-                  <IconButton
-                    icon="account-box-outline"
-                    size={24}
-                    iconColor={theme.colors.onSurface}
-                    onPress={() => setContactMenuVisible(true)}
-                    accessibilityLabel="Contact vendor"
-                    accessibilityRole="button"
-                    accessibilityHint="Opens options to call or message the vendor"
-                  />
-                }
-                contentStyle={{ minWidth: 220 }}
-              >
-                <Menu.Item onPress={handleCallVendor} leadingIcon="phone" title="Call vendor" />
-                <Menu.Item onPress={handleMessageVendor} leadingIcon="message" title="Message vendor" />
-              </Menu>
+
               <IconButton
                 icon="share-variant"
                 size={24}
@@ -581,70 +638,105 @@ const ProductDetail: React.FC = () => {
                 accessibilityHint="Shares this product with others"
               />
               <IconButton
-                icon="heart-outline"
+                icon="cart-outline"
                 size={24}
                 iconColor={theme.colors.onSurface}
-                onPress={() => console.log('Add to favorites')}
-                accessibilityLabel="Add to favorites"
+                onPress={handleAddToCart}
+                accessibilityLabel="Add to cart"
                 accessibilityRole="button"
-                accessibilityHint="Adds this product to your favorites"
+                accessibilityHint="Adds this product to your cart"
               />
             </View>
           </View>
 
-          {/* Price */}
-          <Text
-            variant="headlineMedium"
-            style={[styles.price, { color: theme.colors.primary }]}
-          >
-            {formatCurrency(displayPrice, product.currency)}
-          </Text>
-
-          {/* Vendor Info */}
-          {product.vendor && (
-            <TouchableOpacity
-              style={styles.vendorInfo}
-              onPress={handleGoToVendor}
-            >
-              <IconButton icon="store" size={20} iconColor={theme.colors.primary} />
-              <Text variant="bodyMedium" style={{ color: theme.colors.primary, textDecorationLine: 'underline' }}>
-                {product.vendor.shop_name || product.vendor_name}
+          {/* Price and Vendor Actions Row */}
+          <View style={styles.priceVendorRow}>
+            {/* Price */}
+            <View>
+              <Text
+                variant="headlineMedium"
+                style={[styles.price, { color: theme.colors.primary }]}
+              >
+                {formatCurrency(displayPrice, product.currency)}
               </Text>
-              {product.vendor.rating && (
-                <View style={styles.ratingContainer}>
-                  <IconButton icon="star" size={16} iconColor="#FFD700" />
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSurface }}>
-                    {product.vendor.rating.toFixed(1)}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          )}
-
-          {/* Rating */}
-          {product.rating && (
-            <View style={styles.ratingRow}>
-              <IconButton icon="star" size={20} iconColor="#FFD700" />
-              <Text variant="bodyLarge" style={{ color: theme.colors.onSurface }}>
-                {product.rating.toFixed(1)}
+              {/* Previous Price - Strikethrough (always show) */}
+              <Text
+                variant="bodySmall"
+                style={[styles.previousPrice, { color: theme.colors.onSurfaceVariant }]}
+              >
+                {formatCurrency(
+                  product.compare_at_price && product.compare_at_price > displayPrice
+                    ? product.compare_at_price
+                    : displayPrice * 1.2, // Show 20% higher as placeholder
+                  product.currency
+                )}
               </Text>
-              {product.review_count && (
-                <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                  ({product.review_count} reviews)
-                </Text>
-              )}
             </View>
-          )}
+
+            {/* Vendor Actions */}
+            {product.vendor && (
+              <View style={styles.vendorActionsContainer}>
+                <View style={styles.vendorActions}>
+                  <Button
+                    mode="outlined"
+                    icon="storefront-outline"
+                    onPress={handleGoToVendor}
+                    style={styles.vendorActionButton}
+                    contentStyle={{ height: 32 }}
+                    labelStyle={{ fontSize: 12 }}
+                    accessibilityLabel="Visit vendor store"
+                    accessibilityRole="button"
+                  >
+                    Store
+                  </Button>
+                  <Menu
+                    visible={contactMenuVisible}
+                    onDismiss={() => setContactMenuVisible(false)}
+                    anchor={
+                      <Button
+                        mode="outlined"
+                        icon="phone-outline"
+                        onPress={() => setContactMenuVisible(true)}
+                        style={styles.vendorActionButton}
+                        contentStyle={{ height: 32 }}
+                        labelStyle={{ fontSize: 12 }}
+                        accessibilityLabel="Contact vendor"
+                        accessibilityRole="button"
+                      >
+                        Contact
+                      </Button>
+                    }
+                    contentStyle={{ minWidth: 220 }}
+                  >
+                    <Menu.Item onPress={handleCallVendor} leadingIcon="phone" title="Call Vendor" />
+                    <Menu.Item onPress={handleMessageVendor} leadingIcon="message" title="Send Message" />
+                  </Menu>
+                </View>
+                {/* Store Name Link */}
+                <TouchableOpacity onPress={handleGoToVendor} style={styles.storeNameLink}>
+                  <Text variant="bodySmall" style={{ color: theme.colors.primary, textAlign: 'left' }}>
+                    {product.vendor.shop_name || product.vendor_name || 'Visit Store'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          {/* <Divider style={styles.divider} /> */}
+
+          <Divider style={styles.divider} />
+
+
 
           {/* Actions */}
           <View style={styles.bottomActions}>
             <Button
               mode="outlined"
-              onPress={handleAddToCart}
-              icon="cart-outline"
+              onPress={() => setBulkOrderVisible(true)}
+              icon="basket-plus-outline"
               style={styles.cartButton}
             >
-              Add to Cart
+              Retailer Order
             </Button>
             <Button
               mode="contained"
@@ -703,6 +795,29 @@ const ProductDetail: React.FC = () => {
         message={actionMessage}
         onLoginSuccess={handleLoginSuccess}
       />
+
+      {/* Buy Now Sheet */}
+      {product && (
+        <BuyNowSheet
+          visible={buyNowSheetVisible}
+          product={product}
+          onDismiss={() => setBuyNowSheetVisible(false)}
+          onConfirm={handleBuyNowConfirm}
+          initialVariant={selectedVariant || undefined}
+          initialQuantity={quantity}
+        />
+      )}
+
+      {/* Bulk Order Modal */}
+      {product && (
+        <BulkOrderModal
+          visible={bulkOrderVisible}
+          onDismiss={() => setBulkOrderVisible(false)}
+          product={product}
+          onAddToCart={handleBulkAddToCart}
+          onBuyNow={handleBulkBuyNow}
+        />
+      )}
     </ScreenContainer>
   );
 };
@@ -728,6 +843,7 @@ const styles = StyleSheet.create({
   mainImageContainer: {
     width: SCREEN_WIDTH,
     height: SCREEN_WIDTH,
+    position: 'relative',
   },
   mainImage: {
     width: '100%',
@@ -777,17 +893,21 @@ const styles = StyleSheet.create({
   },
   price: {
     fontWeight: 'bold',
-    marginBottom: 8,
   },
-  vendorInfo: {
+  previousPrice: {
+    textDecorationLine: 'line-through',
+    marginTop: 2,
+  },
+  priceVendorRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
+    gap: 12,
   },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 8,
+  storeNameLink: {
+    marginTop: 6,
+    alignSelf: 'flex-start',
   },
   ratingRow: {
     flexDirection: 'row',
@@ -917,6 +1037,32 @@ const styles = StyleSheet.create({
   relatedProductItem: {
     width: 180,
     marginRight: 12,
+  },
+  favoriteOverlay: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 20,
+  },
+  favoriteButton: {
+    margin: 0,
+  },
+  vendorActionsContainer: {
+    flex: 1,
+  },
+  vendorActions: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8,
+  },
+  vendorActionButton: {
+    flex: 1,
+  },
+  vendorRatingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

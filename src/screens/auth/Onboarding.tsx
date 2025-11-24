@@ -42,8 +42,8 @@ const Onboarding: React.FC = () => {
   ];
 
   const handleGetStarted = () => {
-    // Navigation will be handled by AppNavigator when component unmounts
-    // For now, we'll just finish onboarding
+    // Navigate to RoleSelector to start the auth flow
+    navigation.navigate('RoleSelector');
   };
 
   const handleSkip = () => {

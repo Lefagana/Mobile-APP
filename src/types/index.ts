@@ -26,6 +26,8 @@ export interface ProductVariant {
   label: string;
   price: number;
   inventory?: number;
+  image?: string; // Variant-specific image URL
+  attributes?: Record<string, string>; // e.g., { color: 'Red', size: 'Large' }
 }
 
 export interface Product {

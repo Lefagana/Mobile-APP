@@ -4,6 +4,9 @@ import { SafeAreaView, Edge } from 'react-native-safe-area-context';
 import { useTheme } from 'react-native-paper';
 import { OfflineBanner } from './OfflineBanner';
 
+// Global constant for Voice Bar height + padding
+export const VOICE_BAR_HEIGHT = 80;
+
 export interface ScreenContainerProps {
   children: React.ReactNode;
   edges?: Edge[];
@@ -12,6 +15,7 @@ export interface ScreenContainerProps {
   showOfflineBanner?: boolean;
   style?: ViewStyle;
   contentContainerStyle?: ViewStyle;
+  withBottomPadding?: boolean; // New prop to control bottom padding
 }
 
 export const ScreenContainer: React.FC<ScreenContainerProps> = ({
@@ -22,8 +26,11 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
   showOfflineBanner = true,
   style,
   contentContainerStyle,
+  withBottomPadding = true,
 }) => {
   const theme = useTheme();
+
+  const bottomPadding = withBottomPadding ? VOICE_BAR_HEIGHT : 0;
 
   const content = (
     <>
@@ -40,7 +47,11 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
       >
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={[styles.contentContainer, contentContainerStyle]}
+          contentContainerStyle={[
+            styles.contentContainer,
+            contentContainerStyle,
+            { paddingBottom: (contentContainerStyle?.paddingBottom as number || 16) + bottomPadding }
+          ]}
           refreshControl={refreshControl}
           showsVerticalScrollIndicator={true}
         >
@@ -55,7 +66,13 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
       edges={edges}
       style={[styles.container, { backgroundColor: theme.colors.background }, style]}
     >
-      <View style={[styles.content, contentContainerStyle]}>{content}</View>
+      <View style={[
+        styles.content,
+        contentContainerStyle,
+        { paddingBottom: (contentContainerStyle?.paddingBottom as number || 0) + bottomPadding }
+      ]}>
+        {content}
+      </View>
     </SafeAreaView>
   );
 };
