@@ -20,6 +20,14 @@ const mockUsers: User[] = [
     email: 'amina@example.com',
     role: 'customer',
   },
+  {
+    id: 'user_v001',
+    phone: '+2349011111111',
+    name: 'Oluwaseun Adeyemi',
+    email: 'seun@localmartpro.ng',
+    role: 'vendor',
+    profile_pic: 'https://ui-avatars.com/api/?name=Oluwaseun+Adeyemi&background=4CAF50&color=fff',
+  },
 ];
 
 // Mock Vendors
@@ -947,8 +955,8 @@ const mockNotifications: Notification[] = [
   },
 ];
 
-// OTP Sessions storage (in-memory)
-const otpSessions: Map<string, { phone: string; otp: string; expiresAt: number }> = new Map();
+// OTP Sessions storage (in-memory) - now includes role
+const otpSessions: Map<string, { phone: string; otp: string; expiresAt: number; role?: 'customer' | 'vendor' | 'rider' }> = new Map();
 
 // Generate random OTP
 const generateOTP = (): string => {
@@ -959,16 +967,27 @@ const generateOTP = (): string => {
 export const mockServer = {
   // Auth APIs
   auth: {
-    requestOTP: async (phone: string): Promise<{ otp_session_id: string; ttl_seconds: number; otp?: string }> => {
+    requestOTP: async (phone: string, role?: 'customer' | 'vendor' | 'rider'): Promise<{ otp_session_id: string; ttl_seconds: number; otp?: string }> => {
       await delay(1500);
 
       const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const otp = generateOTP();
       const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
 
-      otpSessions.set(sessionId, { phone, otp, expiresAt });
+      // Determine role based on phone number if not provided
+      let userRole = role;
+      if (!userRole) {
+        // Check if this is the demo vendor phone
+        if (phone === '+2349011111111') {
+          userRole = 'vendor';
+        } else {
+          userRole = 'customer';
+        }
+      }
 
-      console.log(`[MOCK] OTP for ${phone}: ${otp} (Session: ${sessionId})`);
+      otpSessions.set(sessionId, { phone, otp, expiresAt, role: userRole });
+
+      console.log(`[MOCK] OTP for ${phone} (${userRole}): ${otp} (Session: ${sessionId})`);
 
       return {
         otp_session_id: sessionId,
@@ -998,13 +1017,19 @@ export const mockServer = {
       // Clean up session
       otpSessions.delete(sessionId);
 
-      // Return mock user (or create new one)
-      const user = mockUsers[0] || {
-        id: `user_${Date.now()}`,
-        phone: session.phone,
-        name: undefined,
-        role: 'customer' as const,
-      };
+      // Find user by phone or create new user with appropriate role
+      let user = mockUsers.find(u => u.phone === session.phone);
+
+      if (!user) {
+        // Create new user with role from session
+        user = {
+          id: `user_${Date.now()}`,
+          phone: session.phone,
+          name: undefined,
+          role: session.role || 'customer',  // Use role from OTP session
+        };
+        mockUsers.push(user);
+      }
 
       return {
         access_token: `mock_token_${Date.now()}`,

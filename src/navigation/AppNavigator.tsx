@@ -6,13 +6,31 @@ import { useAuth } from '../contexts/AuthContext';
 import type { RootStackParamList } from './types';
 import { AuthStack } from './AuthStack';
 import { CustomerStack } from './CustomerStack';
+import { VendorStack } from './VendorStack';
 import { useEffect, useState } from 'react';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
 export const AppNavigator: React.FC = () => {
-  const { isLoading } = useAuth();
+  const { isLoading, user } = useAuth();
   const navigationRef = useRef<any>(null);
+
+  // Determine which stack to show based on user role
+  const getInitialRouteName = (): 'Auth' | 'Customer' | 'Vendor' => {
+    if (!user) return 'Auth';
+
+    // Role-based routing
+    switch (user.role) {
+      case 'vendor':
+        return 'Vendor';
+      case 'rider':
+        // For now, riders go to customer (will add RiderStack later)
+        return 'Customer';
+      case 'customer':
+      default:
+        return 'Customer';
+    }
+  };
 
   if (isLoading) {
     return (
@@ -24,12 +42,13 @@ export const AppNavigator: React.FC = () => {
 
   return (
     <NavigationContainer ref={navigationRef}>
-      <Stack.Navigator 
+      <Stack.Navigator
         screenOptions={{ headerShown: false }}
-        initialRouteName="Customer"
+        initialRouteName={getInitialRouteName()}
       >
         <Stack.Screen name="Auth" component={AuthStack} />
         <Stack.Screen name="Customer" component={CustomerStack} />
+        <Stack.Screen name="Vendor" component={VendorStack} />
       </Stack.Navigator>
     </NavigationContainer>
   );

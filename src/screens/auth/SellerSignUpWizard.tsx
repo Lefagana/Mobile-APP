@@ -5,9 +5,10 @@ import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { AuthStackParamList } from '../../navigation/types';
 import { useLocalization } from '../../contexts/LocalizationContext';
+import { useAuth } from '../../contexts/AuthContext';
 import * as SecureStore from 'expo-secure-store';
 
- type Nav = StackNavigationProp<AuthStackParamList, 'SellerSignUpWizard'>;
+type Nav = StackNavigationProp<AuthStackParamList, 'SellerSignUpWizard'>;
 
 const sellerTypes = ['Individual', 'Business'];
 const tiers = ['Free', 'Basic', 'Pro'];
@@ -34,6 +35,9 @@ const SellerSignUpWizard: React.FC = () => {
 
   const progress = useMemo(() => step / 5, [step]);
 
+  const { register } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const next = () => {
     const e: Record<string, string> = {};
     if (step === 1) {
@@ -51,16 +55,44 @@ const SellerSignUpWizard: React.FC = () => {
     if (step < 5) setStep(step + 1); else finish();
   };
 
-  const finish = () => {
-    // Mock submission and mark onboarding complete
-    SecureStore.setItemAsync('wakanda_onboarding_complete', '1').finally(() => {
-      const parent = navigation.getParent();
-      if (parent) parent.reset({ index: 0, routes: [{ name: 'Customer' as never }] });
-    });
+  const finish = async () => {
+    try {
+      setIsSubmitting(true);
+
+      // 1. Save vendor specific setup data for VendorContext to pick up
+      const setupData = {
+        shopName: storeName,
+        sellerType,
+        email,
+        phone,
+        cacNumber,
+        tier,
+        trainingScore: score,
+        twoFAEnabled: twoFA,
+      };
+
+      await SecureStore.setItemAsync('pending_vendor_setup', JSON.stringify(setupData));
+      await SecureStore.setItemAsync('wakanda_onboarding_complete', '1');
+
+      // 2. Register user (triggers AuthContext -> AppNavigator -> VendorContext)
+      await register({
+        name,
+        email,
+        phone,
+        role: 'vendor',
+      });
+
+      // Navigation is handled automatically by AuthContext state change
+    } catch (error) {
+      console.error('Registration failed:', error);
+      setErrors({ submit: 'Registration failed. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const removeDoc = (d: string) => setDocs((prev) => prev.filter((x) => x !== d));
-  const addMockDoc = () => setDocs((prev) => [...prev, `doc_${prev.length + 1}.png`] );
+  const addMockDoc = () => setDocs((prev) => [...prev, `doc_${prev.length + 1}.png`]);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -139,9 +171,9 @@ const SellerSignUpWizard: React.FC = () => {
           <Text variant="headlineSmall" style={styles.title}>{t('seller.training') || 'Quick training quiz'}</Text>
           <Text variant="bodyMedium" style={styles.subtitle}>{t('seller.trainingSubtitle') || 'Answer a few questions to earn a badge'}</Text>
           <View style={styles.chipsRow}>
-            <Chip selected={trainingProgress.q1} onPress={async () => { const np = { ...trainingProgress, q1: !trainingProgress.q1 }; setTrainingProgress(np); await SecureStore.setItemAsync('seller_training_score', String([np.q1,np.q2,np.q3].filter(Boolean).length)); }}>Q1: Packaging best practices</Chip>
-            <Chip selected={trainingProgress.q2} onPress={async () => { const np = { ...trainingProgress, q2: !trainingProgress.q2 }; setTrainingProgress(np); await SecureStore.setItemAsync('seller_training_score', String([np.q1,np.q2,np.q3].filter(Boolean).length)); }}>Q2: Returns policy basics</Chip>
-            <Chip selected={trainingProgress.q3} onPress={async () => { const np = { ...trainingProgress, q3: !trainingProgress.q3 }; setTrainingProgress(np); await SecureStore.setItemAsync('seller_training_score', String([np.q1,np.q2,np.q3].filter(Boolean).length)); }}>Q3: Delivery options</Chip>
+            <Chip selected={trainingProgress.q1} onPress={async () => { const np = { ...trainingProgress, q1: !trainingProgress.q1 }; setTrainingProgress(np); await SecureStore.setItemAsync('seller_training_score', String([np.q1, np.q2, np.q3].filter(Boolean).length)); }}>Q1: Packaging best practices</Chip>
+            <Chip selected={trainingProgress.q2} onPress={async () => { const np = { ...trainingProgress, q2: !trainingProgress.q2 }; setTrainingProgress(np); await SecureStore.setItemAsync('seller_training_score', String([np.q1, np.q2, np.q3].filter(Boolean).length)); }}>Q2: Returns policy basics</Chip>
+            <Chip selected={trainingProgress.q3} onPress={async () => { const np = { ...trainingProgress, q3: !trainingProgress.q3 }; setTrainingProgress(np); await SecureStore.setItemAsync('seller_training_score', String([np.q1, np.q2, np.q3].filter(Boolean).length)); }}>Q3: Delivery options</Chip>
           </View>
           <Text style={{ textAlign: 'center', marginTop: 8 }}>{`Score: ${score}/3`}</Text>
           <Button mode="contained" onPress={next} style={styles.nextBtn}>{t('common.next') || 'Next'}</Button>
@@ -159,8 +191,58 @@ const SellerSignUpWizard: React.FC = () => {
             <Checkbox status={agree ? 'checked' : 'unchecked'} onPress={() => setAgree(!agree)} />
             <Text style={styles.termsText}>{t('auth.agreeTerms') || 'I agree to the Terms & Privacy'}</Text>
           </View>
-          <Button mode="contained" onPress={() => navigation.navigate('SellerTwoFASetup' as any)} style={styles.nextBtn} disabled={!agree}>
-            {t('seller.setup2FA') || 'Set up 2FA'}
+          {errors.submit && (
+            <Text style={{ color: 'red', marginTop: 8, textAlign: 'center' }}>{errors.submit}</Text>
+          )}
+          <Button
+            mode="contained"
+            onPress={async () => {
+              if (!twoFA) {
+                // If 2FA not enabled, just register and let automatic navigation happen
+                await finish();
+              } else {
+                // If 2FA enabled, register first then navigate to 2FA setup
+                try {
+                  setIsSubmitting(true);
+
+                  // Save vendor setup data
+                  const setupData = {
+                    shopName: storeName,
+                    sellerType,
+                    email,
+                    phone,
+                    cacNumber,
+                    tier,
+                    trainingScore: score,
+                    twoFAEnabled: twoFA,
+                  };
+                  await SecureStore.setItemAsync('pending_vendor_setup', JSON.stringify(setupData));
+                  await SecureStore.setItemAsync('wakanda_onboarding_complete', '1'); // Ensure onboarding is marked complete
+
+                  // Register user
+                  await register({
+                    name,
+                    email,
+                    phone,
+                    role: 'vendor',
+                  });
+
+                  // Navigate to 2FA setup (user is now registered)
+                  navigation.navigate('SellerTwoFASetup' as any);
+
+                } catch (error) {
+                  console.error('Registration failed:', error);
+                  setErrors({ submit: 'Registration failed. Please try again.' });
+                } finally {
+                  setIsSubmitting(false);
+                }
+              }
+            }}
+            style={styles.nextBtn}
+            disabled={!agree || isSubmitting}
+            loading={isSubmitting}
+          >
+            {twoFA ? (t('seller.setup2FA') || 'Set up 2FA') : (t('seller.completeRegistration') || 'Complete Registration')}
           </Button>
         </View>
       )}

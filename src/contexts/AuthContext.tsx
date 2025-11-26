@@ -9,6 +9,7 @@ interface AuthContextType {
   isLoading: boolean;
   tokens: AuthTokens | null;
   login: (phone: string, otp: string, sessionId: string) => Promise<void>;
+  register: (userData: any) => Promise<void>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;
   updateUser: (user: Partial<User>) => void;
@@ -69,7 +70,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (phone: string, otp: string, sessionId: string) => {
     try {
       const response = await api.auth.verifyOTP(sessionId, otp);
-      
+
       // Store tokens securely
       try {
         await Promise.all([
@@ -91,6 +92,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(response.user);
     } catch (error) {
       console.error('Login error:', error);
+      throw error;
+    }
+  };
+
+  const register = async (userData: any) => {
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const newUser: User = {
+        id: `user_${Date.now()}`,
+        name: userData.name,
+        email: userData.email,
+        phone: userData.phone,
+        role: userData.role || 'customer',
+        is_verified: true,
+      };
+
+      // Store tokens securely (mock)
+      const mockToken = 'mock-access-token-' + Date.now();
+      const mockRefreshToken = 'mock-refresh-token-' + Date.now();
+
+      await Promise.all([
+        SecureStore.setItemAsync(TOKEN_STORAGE_KEY, mockToken),
+        SecureStore.setItemAsync(REFRESH_TOKEN_STORAGE_KEY, mockRefreshToken),
+        SecureStore.setItemAsync(USER_STORAGE_KEY, JSON.stringify(newUser)),
+      ]);
+
+      setTokens({
+        access_token: mockToken,
+        refresh_token: mockRefreshToken,
+      });
+      setUser(newUser);
+    } catch (error) {
+      console.error('Registration error:', error);
       throw error;
     }
   };
@@ -148,6 +184,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         isLoading,
         tokens,
         login,
+        register,
         logout,
         refreshToken,
         updateUser,

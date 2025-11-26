@@ -6,6 +6,7 @@ export interface User {
   email?: string;
   profile_pic?: string;
   role: 'customer' | 'vendor' | 'rider' | 'admin';
+  is_verified?: boolean;
   created_at?: string;
 }
 
@@ -314,3 +315,7 @@ export interface OrderUpdateEvent {
     name?: string;
   };
 }
+
+// Export vendor types
+export * from './vendor';
+

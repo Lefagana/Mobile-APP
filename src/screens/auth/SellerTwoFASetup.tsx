@@ -4,17 +4,32 @@ import { Button, Text, TextInput, HelperText, IconButton } from 'react-native-pa
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { AuthStackParamList } from '../../navigation/types';
+import { useAuth } from '../../contexts/AuthContext';
 import * as SecureStore from 'expo-secure-store';
 
- type Nav = StackNavigationProp<AuthStackParamList, 'SellerTwoFASetup'>;
+type Nav = StackNavigationProp<AuthStackParamList, 'SellerTwoFASetup'>;
 
 const SellerTwoFASetup: React.FC = () => {
   const navigation = useNavigation<Nav>();
+  const { user } = useAuth();
+
+  // Debug logging
+  console.log('[SellerTwoFASetup] Current user:', user);
+  console.log('[SellerTwoFASetup] User role:', user?.role);
 
   const finish = async () => {
     await SecureStore.setItemAsync('wakanda_onboarding_complete', '1');
     const parent = navigation.getParent();
-    if (parent) parent.reset({ index: 0, routes: [{ name: 'Customer' as never }] });
+
+    if (parent) {
+      // Route based on user role
+      const targetStack = user?.role === 'vendor' ? 'Vendor' :
+        user?.role === 'rider' ? 'Customer' : // Placeholder until RiderStack exists
+          'Customer';
+
+      console.log('[SellerTwoFASetup] Routing to:', targetStack);
+      parent.reset({ index: 0, routes: [{ name: targetStack as never }] });
+    }
   };
 
   return (

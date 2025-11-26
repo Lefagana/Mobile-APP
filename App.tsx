@@ -23,6 +23,9 @@ import { NetworkProvider } from './src/contexts/NetworkContext';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { CartProvider } from './src/contexts/CartContext';
 import { LocalizationProvider } from './src/contexts/LocalizationContext';
+import { VendorProvider } from './src/contexts/VendorContext';
+import { VendorWalletProvider } from './src/contexts/VendorWalletContext';
+import { ChatProvider } from './src/contexts/ChatContext';
 
 // Navigation
 import { AppNavigator } from './src/navigation/AppNavigator';
@@ -38,7 +41,7 @@ const queryClient = new QueryClient({
     queries: {
       retry: 2,
       staleTime: 5 * 60 * 1000, // 5 minutes
-      cacheTime: 10 * 60 * 1000, // 10 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)
     },
   },
 });
@@ -55,18 +58,24 @@ export default function App() {
         <ConfigProvider>
           <NetworkProvider>
             <AuthProvider>
-              <CartProvider>
-                <LocalizationProvider>
-                  <QueryClientProvider client={queryClient}>
-                    <PaperProvider theme={lightTheme}>
-                      <StatusBar style="auto" />
-                      <ErrorBoundary>
-                        <AppNavigator />
-                      </ErrorBoundary>
-                    </PaperProvider>
-                  </QueryClientProvider>
-                </LocalizationProvider>
-              </CartProvider>
+              <VendorProvider>
+                <VendorWalletProvider>
+                  <ChatProvider>
+                    <CartProvider>
+                      <LocalizationProvider>
+                        <QueryClientProvider client={queryClient}>
+                          <PaperProvider theme={lightTheme}>
+                            <StatusBar style="auto" />
+                            <ErrorBoundary>
+                              <AppNavigator />
+                            </ErrorBoundary>
+                          </PaperProvider>
+                        </QueryClientProvider>
+                      </LocalizationProvider>
+                    </CartProvider>
+                  </ChatProvider>
+                </VendorWalletProvider>
+              </VendorProvider>
             </AuthProvider>
           </NetworkProvider>
         </ConfigProvider>

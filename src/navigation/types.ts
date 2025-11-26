@@ -94,6 +94,57 @@ export type CustomerStackParamList = {
   };
 };
 
+// Vendor Stack (Main Vendor App)
+export type VendorStackParamList = {
+  Dashboard: undefined;
+  Products: undefined;
+  Orders: undefined;
+  Wallet: undefined;
+  Profile: undefined;
+  ProductForm: {
+    productId?: string; // undefined for new product
+    mode: 'create' | 'edit';
+  };
+  ProductDetail: {
+    productId: string;
+  };
+  InventoryManager: undefined;
+  BulkUpload: undefined;
+  OrderDetail: {
+    orderId: string;
+  };
+  OrderStatusUpdate: {
+    orderId: string;
+  };
+  ReturnsList: undefined;
+  TransactionHistory: undefined;
+  PayoutRequest: undefined;
+  PayoutHistory: undefined;
+  AnalyticsSummary: undefined;
+  FinancialReports: undefined;
+  ShopProfile: undefined;
+  BusinessInfo: undefined;
+  BankSettings: undefined;
+  VendorSettings: undefined;
+  // Onboarding screens
+  BusinessTypeSelection: undefined;
+  ShopDetailsForm: undefined;
+  LocationCapture: undefined;
+  KYCUpload: undefined;
+  ChatWindow: {
+    chatId: string;
+  };
+};
+
+// Vendor Tab Navigator
+export type VendorTabParamList = {
+  Dashboard: undefined;
+  Products: undefined;
+  Orders: undefined;
+  Wallet: undefined;
+  Profile: undefined;
+};
+
 // Home Tab Navigator
 export type HomeTabParamList = {
   Home: undefined;
@@ -107,6 +158,7 @@ export type HomeTabParamList = {
 export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
   Customer: NavigatorScreenParams<CustomerStackParamList>;
+  Vendor: NavigatorScreenParams<VendorStackParamList>;
 };
 
 declare global {

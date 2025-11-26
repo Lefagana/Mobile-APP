@@ -72,10 +72,16 @@ const OTPVerify: React.FC = () => {
         return;
       }
 
-      // Default: navigate to Customer root
+      // Default: navigate based on user role
       if (parent) {
+        // Get user from AuthContext after login
+        const { user } = useAuth();
+        const targetStack = user?.role === 'vendor' ? 'Vendor' :
+          user?.role === 'rider' ? 'Customer' : // Placeholder
+            'Customer';
+
         parent.dispatch(
-          CommonActions.reset({ index: 0, routes: [{ name: 'Customer' }] })
+          CommonActions.reset({ index: 0, routes: [{ name: targetStack as never }] })
         );
       } else {
         navigation.navigate('Customer' as never);
