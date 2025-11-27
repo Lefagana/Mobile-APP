@@ -1,6 +1,6 @@
 # Wakanda-X
 
-A frontend-first, customer-only mobile application built with React Native and Expo for the Nigerian e-commerce market.
+A frontend-first, mobile application built with React Native and Expo for the Nigerian e-commerce market.
 
 ## Quick Start
 
