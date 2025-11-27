@@ -1,4 +1,7 @@
 import { Product, Vendor, Order, User, CreateOrderRequest, CreateOrderResponse, AuthResponse, ProductListResponse, PaymentInitiateResponse, PaymentVerifyResponse, Wallet, WalletTransaction, Chat, Message, Notification, ProductReview, ReviewListResponse } from '../../types';
+import { mockVendorProducts as vendorProducts, mockVendors as vendorMockData } from './vendorMockData';
+import { VendorProduct } from '../../types/vendor';
+
 
 // Simulated delay
 const delay = (ms: number = 800) => new Promise(resolve => setTimeout(resolve, ms));
@@ -99,8 +102,47 @@ const mockVendors: Vendor[] = [
   },
 ];
 
-// Mock Products - Nigerian market items
+// Helper function to convert VendorProduct to Product format
+const convertVendorProductToProduct = (vendorProduct: VendorProduct): Product => {
+  const vendor = vendorMockData.find(v => v.id === vendorProduct.vendor_id);
+
+  return {
+    id: vendorProduct.id,
+    title: vendorProduct.title,
+    name: vendorProduct.title,
+    description: vendorProduct.description,
+    price: vendorProduct.price,
+    currency: vendorProduct.currency || 'NGN',
+    vendor_id: vendorProduct.vendor_id,
+    vendor_name: vendor?.shop_name || 'Unknown Vendor',
+    vendor: vendor ? {
+      id: vendor.id,
+      user_id: vendor.user_id,
+      shop_name: vendor.shop_name,
+      location: vendor.location,
+      address_text: vendor.address_text,
+      rating: vendor.rating,
+      logo: vendor.logo,
+    } : undefined,
+    images: vendorProduct.images || [],
+    image_url: vendorProduct.images?.[0] || '',
+    variants: vendorProduct.variants?.map(v => ({
+      id: v.id,
+      label: v.label,
+      price: v.price || vendorProduct.price,
+    })),
+    rating: vendorProduct.rating || 4.5,
+    review_count: vendorProduct.sales_count || 0,
+    category: vendorProduct.category,
+    inventory: vendorProduct.track_quantity ? vendorProduct.quantity : 999,
+    is_low_price: false,
+  };
+};
+
+// Mock Products - Nigerian market items (includes vendor products)
 const mockProducts: Product[] = [
+  ...vendorProducts.map(convertVendorProductToProduct),
+
   {
     id: 'prod_001',
     title: 'Groundnut Oil - 1L',
@@ -1228,6 +1270,89 @@ export const mockServer = {
       }
       return vendor;
     },
+
+    products: {
+      create: async (vendorId: string, productData: Partial<VendorProduct>): Promise<VendorProduct> => {
+        await delay();
+        const newProduct: VendorProduct = {
+          id: `prod_${Date.now()}`,
+          vendor_id: vendorId,
+          title: productData.title || 'New Product',
+          description: productData.description || '',
+          price: productData.price || 0,
+          compare_at_price: productData.compare_at_price,
+          cost_price: productData.cost_price,
+          category: productData.category || 'other',
+          tags: productData.tags || [],
+
+          images: productData.images || [],
+          video: productData.video,
+
+          sku: productData.sku || `SKU-${Date.now()}`,
+          barcode: productData.barcode,
+          track_quantity: productData.track_quantity ?? true,
+          quantity: productData.quantity || 0,
+          low_stock_threshold: productData.low_stock_threshold || 5,
+          allow_backorders: productData.allow_backorders ?? false,
+
+          has_variants: productData.has_variants ?? false,
+          variants: productData.variants || [],
+
+          requires_shipping: productData.requires_shipping ?? true,
+          weight_kg: productData.weight_kg,
+          dimensions: productData.dimensions,
+          is_fragile: productData.is_fragile ?? false,
+
+          status: productData.status || 'active',
+          sales_count: 0,
+          rating: 0,
+          review_count: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        // Update both vendor products and global products
+        vendorProducts.push(newProduct);
+        mockProducts.push(convertVendorProductToProduct(newProduct));
+
+        return newProduct;
+      },
+
+      update: async (vendorId: string, productId: string, updates: Partial<VendorProduct>): Promise<VendorProduct> => {
+        await delay();
+        const index = vendorProducts.findIndex(p => p.id === productId);
+        if (index === -1) throw new Error('Product not found');
+
+        const updatedProduct = {
+          ...vendorProducts[index],
+          ...updates,
+          updated_at: new Date().toISOString()
+        };
+
+        vendorProducts[index] = updatedProduct;
+
+        // Update global products mock as well
+        const globalIndex = mockProducts.findIndex(p => p.id === productId);
+        if (globalIndex !== -1) {
+          mockProducts[globalIndex] = convertVendorProductToProduct(updatedProduct);
+        }
+
+        return updatedProduct;
+      },
+
+      delete: async (vendorId: string, productId: string): Promise<void> => {
+        await delay();
+        const index = vendorProducts.findIndex(p => p.id === productId);
+        if (index !== -1) {
+          vendorProducts.splice(index, 1);
+        }
+
+        const globalIndex = mockProducts.findIndex(p => p.id === productId);
+        if (globalIndex !== -1) {
+          mockProducts.splice(globalIndex, 1);
+        }
+      }
+    }
   },
 
   // Cart APIs

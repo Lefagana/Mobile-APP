@@ -17,6 +17,7 @@ import {
   Chat,
   Message,
   Notification,
+  VendorProduct,
 } from '../types';
 import { parseApiError, logError, ErrorCode } from '../utils/errorHandling';
 
@@ -73,7 +74,7 @@ const getApiClient = async (baseURL: string): Promise<AxiosInstance> => {
             // fallthrough to reject
           }
         }
-        
+
         // Reject with parsed error for better error handling upstream
         return Promise.reject(appError);
       }
@@ -114,7 +115,7 @@ const refreshAccessToken = async (baseURL: string): Promise<string | null> => {
     try {
       await SecureStore.deleteItemAsync('wakanda_access_token');
       await SecureStore.deleteItemAsync('wakanda_refresh_token');
-    } catch {}
+    } catch { }
     return null;
   } finally {
     isRefreshing = false;
@@ -144,15 +145,20 @@ export const createApi = (config: { MOCK_MODE: boolean; apiBaseUrl: string }) =>
         }) => mockServer.products.list(params),
 
         getById: (id: string) => mockServer.products.getById(id),
-        
+
         getReviews: (productId: string, page?: number) => mockServer.products.getReviews(productId, page),
-        
+
         getRelated: (productId: string, limit?: number) => mockServer.products.getRelated(productId, limit),
       },
 
       vendors: {
         list: () => mockServer.vendors.list(),
         getById: (id: string) => mockServer.vendors.getById(id),
+        products: {
+          create: (vendorId: string, data: any) => mockServer.vendors.products.create(vendorId, data),
+          update: (vendorId: string, productId: string, data: any) => mockServer.vendors.products.update(vendorId, productId, data),
+          delete: (vendorId: string, productId: string) => mockServer.vendors.products.delete(vendorId, productId),
+        }
       },
 
       cart: {
@@ -219,41 +225,41 @@ export const createApi = (config: { MOCK_MODE: boolean; apiBaseUrl: string }) =>
       },
     },
 
-      products: {
-        list: async (params?: {
-          category?: string;
-          q?: string;
-          page?: number;
-          lat?: number;
-          lng?: number;
-        }): Promise<ProductListResponse> => {
-          const client = await getApiClient(apiBaseUrl);
-          const response = await client.get('/products', { params });
-          return response.data;
-        },
-
-        getById: async (id: string): Promise<Product> => {
-          const client = await getApiClient(apiBaseUrl);
-          const response = await client.get(`/products/${id}`);
-          return response.data;
-        },
-
-        getReviews: async (productId: string, page: number = 1): Promise<ReviewListResponse> => {
-          const client = await getApiClient(apiBaseUrl);
-          const response = await client.get(`/products/${productId}/reviews`, {
-            params: { page },
-          });
-          return response.data;
-        },
-
-        getRelated: async (productId: string, limit: number = 6): Promise<Product[]> => {
-          const client = await getApiClient(apiBaseUrl);
-          const response = await client.get(`/products/${productId}/related`, {
-            params: { limit },
-          });
-          return response.data.items || response.data;
-        },
+    products: {
+      list: async (params?: {
+        category?: string;
+        q?: string;
+        page?: number;
+        lat?: number;
+        lng?: number;
+      }): Promise<ProductListResponse> => {
+        const client = await getApiClient(apiBaseUrl);
+        const response = await client.get('/products', { params });
+        return response.data;
       },
+
+      getById: async (id: string): Promise<Product> => {
+        const client = await getApiClient(apiBaseUrl);
+        const response = await client.get(`/products/${id}`);
+        return response.data;
+      },
+
+      getReviews: async (productId: string, page: number = 1): Promise<ReviewListResponse> => {
+        const client = await getApiClient(apiBaseUrl);
+        const response = await client.get(`/products/${productId}/reviews`, {
+          params: { page },
+        });
+        return response.data;
+      },
+
+      getRelated: async (productId: string, limit: number = 6): Promise<Product[]> => {
+        const client = await getApiClient(apiBaseUrl);
+        const response = await client.get(`/products/${productId}/related`, {
+          params: { limit },
+        });
+        return response.data.items || response.data;
+      },
+    },
 
     vendors: {
       list: async (): Promise<Vendor[]> => {
@@ -267,6 +273,23 @@ export const createApi = (config: { MOCK_MODE: boolean; apiBaseUrl: string }) =>
         const response = await client.get(`/vendors/${id}`);
         return response.data;
       },
+
+      products: {
+        create: async (vendorId: string, data: any): Promise<VendorProduct> => {
+          const client = await getApiClient(apiBaseUrl);
+          const response = await client.post(`/vendors/${vendorId}/products`, data);
+          return response.data;
+        },
+        update: async (vendorId: string, productId: string, data: any): Promise<VendorProduct> => {
+          const client = await getApiClient(apiBaseUrl);
+          const response = await client.put(`/vendors/${vendorId}/products/${productId}`, data);
+          return response.data;
+        },
+        delete: async (vendorId: string, productId: string): Promise<void> => {
+          const client = await getApiClient(apiBaseUrl);
+          await client.delete(`/vendors/${vendorId}/products/${productId}`);
+        },
+      }
     },
 
     cart: {

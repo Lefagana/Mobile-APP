@@ -5,7 +5,7 @@ import { ScreenContainer } from '../../../components/common/ScreenContainer';
 import { useVendor } from '../../../contexts/VendorContext';
 import { formatCurrency } from '../../../utils/formatters';
 import type { VendorStackParamList } from '../../../navigation/types';
-import type { StackScreenProps } from '@react-navigation/stack';
+import type { StackScreenProps, StackNavigationProp } from '@react-navigation/stack';
 import { VendorProduct } from '../../../types/vendor';
 
 type Props = StackScreenProps<VendorStackParamList, 'Products'>;
@@ -15,6 +15,7 @@ export default function ProductList({ navigation }: Props) {
     const { products } = useVendor();
     const [searchQuery, setSearchQuery] = React.useState('');
     const [statusFilter, setStatusFilter] = React.useState<'all' | 'active' | 'inactive' | 'draft'>('all');
+    const stackNavigation = navigation.getParent<StackNavigationProp<VendorStackParamList>>();
 
     // Filter products
     const filteredProducts = products.filter(product => {
@@ -38,7 +39,7 @@ export default function ProductList({ navigation }: Props) {
     };
 
     return (
-        <ScreenContainer>
+        <ScreenContainer scrollable={false}>
             <View style={styles.container}>
                 {/* Header */}
                 <View style={styles.header}>
@@ -95,7 +96,7 @@ export default function ProductList({ navigation }: Props) {
                     renderItem={({ item: product }) => (
                         <Card
                             style={styles.productCard}
-                            onPress={() => navigation.navigate('ProductDetail', { productId: product.id })}
+                            onPress={() => stackNavigation?.navigate('ProductDetail', { productId: product.id })}
                         >
                             <Card.Content>
                                 <View style={styles.productRow}>
@@ -149,7 +150,7 @@ export default function ProductList({ navigation }: Props) {
                                         <IconButton
                                             icon="dots-vertical"
                                             size={20}
-                                            onPress={() => navigation.navigate('ProductForm', {
+                                            onPress={() => stackNavigation?.navigate('ProductForm', {
                                                 productId: product.id,
                                                 mode: 'edit'
                                             })}
@@ -180,7 +181,7 @@ export default function ProductList({ navigation }: Props) {
                     icon="plus"
                     label="Add Product"
                     style={styles.fab}
-                    onPress={() => navigation.navigate('ProductForm', { mode: 'create' })}
+                    onPress={() => stackNavigation?.navigate('ProductForm', { mode: 'create' })}
                 />
             </View>
         </ScreenContainer>

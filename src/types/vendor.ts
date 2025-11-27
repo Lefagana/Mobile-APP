@@ -1,4 +1,15 @@
 // Vendor Domain Types
+
+// Storage keys for vendor data
+export const VENDOR_STORAGE = {
+    PROFILE: '@vendor/profile',
+    STATS: '@vendor/stats',
+    PRODUCTS: '@vendor/products',
+    ACTIVE_ORDERS: '@vendor/active_orders',
+    ANALYTICS: '@vendor/analytics',
+    OFFLINE_QUEUE: '@vendor/offline_queue',
+} as const;
+
 export interface Vendor {
     // Core fields
     id: string;
@@ -500,28 +511,12 @@ export interface ProductPerformance {
     product_image: string;
     sales_count: number;
     revenue: number;
-    views: number;
-    conversion_rate: number;
-    stock_turnover: number;
 }
 
 export interface CustomerInsights {
     total_customers: number;
-    repeat_customers: number;
-    repeat_rate: number;
-    average_spend: number;
-    top_locations: Array<{
-        city: string;
-        count: number;
-    }>;
-}
-
-// Onboarding Types
-export interface BusinessTypeData {
-    business_type: 'individual' | 'business' | 'corporation';
-    legal_business_name: string;
-    cac_number?: string;
-    tax_id?: string;
+    returning_rate: number;
+    top_locations: { city: string; count: number }[];
 }
 
 export interface ShopDetailsData {

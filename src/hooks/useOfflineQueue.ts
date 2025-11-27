@@ -39,7 +39,7 @@ export const registerActionHandler = (type: string, handler: ActionHandler) => {
   actionHandlers.set(type, handler);
 };
 
-export const useOfflineQueue = (): UseOfflineQueueReturn => {
+export const useOfflineQueue = (storageKey: string = QUEUE_STORAGE_KEY): UseOfflineQueueReturn => {
   const { isOnline } = useNetwork();
   const [queue, setQueue] = useState<QueuedAction[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);

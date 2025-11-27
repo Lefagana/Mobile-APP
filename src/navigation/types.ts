@@ -108,6 +108,10 @@ export type VendorStackParamList = {
   ProductDetail: {
     productId: string;
   };
+  MarketplaceBrowser: undefined;
+  CustomerProductDetail: {
+    productId: string;
+  };
   InventoryManager: undefined;
   BulkUpload: undefined;
   OrderDetail: {
@@ -131,9 +135,12 @@ export type VendorStackParamList = {
   ShopDetailsForm: undefined;
   LocationCapture: undefined;
   KYCUpload: undefined;
-  ChatWindow: {
+  ChatList: undefined;
+  ChatDetail: {
     chatId: string;
+    customerName?: string;
   };
+  NotificationList: undefined;
 };
 
 // Vendor Tab Navigator

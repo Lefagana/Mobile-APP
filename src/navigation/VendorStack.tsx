@@ -18,11 +18,23 @@ import OrderDetail from '../screens/vendor/orders/OrderDetail';
 import TransactionHistory from '../screens/vendor/wallet/TransactionHistory';
 import PayoutRequest from '../screens/vendor/wallet/PayoutRequest';
 
+// Marketplace
+import MarketplaceBrowser from '../screens/vendor/marketplace/MarketplaceBrowser';
+import CustomerProductDetail from '../screens/product/ProductDetail';
+
+// Shared Screens
+import NotificationList from '../screens/misc/NotificationList';
+
 // Onboarding Screens
 import BusinessTypeSelection from '../screens/vendor/onboarding/BusinessTypeSelection';
 import ShopDetailsForm from '../screens/vendor/onboarding/ShopDetailsForm';
 import LocationCapture from '../screens/vendor/onboarding/LocationCapture';
 import KYCUpload from '../screens/vendor/onboarding/KYCUpload';
+
+// Chat Screens
+import ChatList from '../screens/vendor/chat/ChatList';
+import ChatDetail from '../screens/vendor/chat/ChatDetail';
+import AnalyticsSummary from '../screens/vendor/analytics/AnalyticsSummary';
 
 // Placeholder components for missing screens
 import { View, StyleSheet } from 'react-native';
@@ -151,6 +163,16 @@ export const VendorStack: React.FC = () => {
                 options={{ title: 'Product Details' }}
             />
             <Stack.Screen
+                name="MarketplaceBrowser"
+                component={MarketplaceBrowser}
+                options={{ title: 'Marketplace' }}
+            />
+            <Stack.Screen
+                name="CustomerProductDetail"
+                component={CustomerProductDetail}
+                options={{ title: 'Product Details' }}
+            />
+            <Stack.Screen
                 name="InventoryManager"
                 component={() => <PlaceholderScreen title="Inventory Manager" />}
                 options={{ title: 'Manage Inventory' }}
@@ -196,7 +218,7 @@ export const VendorStack: React.FC = () => {
             />
             <Stack.Screen
                 name="AnalyticsSummary"
-                component={() => <PlaceholderScreen title="Analytics" />}
+                component={AnalyticsSummary}
                 options={{ title: 'Business Analytics' }}
             />
             <Stack.Screen
@@ -251,9 +273,19 @@ export const VendorStack: React.FC = () => {
 
             {/* Shared Screens */}
             <Stack.Screen
-                name="ChatWindow"
-                component={() => <PlaceholderScreen title="Chat" />}
-                options={{ title: 'Customer Chat' }}
+                name="ChatList"
+                component={ChatList}
+                options={{ title: 'Messages' }}
+            />
+            <Stack.Screen
+                name="ChatDetail"
+                component={ChatDetail}
+                options={{ title: 'Chat' }}
+            />
+            <Stack.Screen
+                name="NotificationList"
+                component={NotificationList}
+                options={{ title: 'Notifications' }}
             />
         </Stack.Navigator>
     );
