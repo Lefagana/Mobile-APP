@@ -56,7 +56,7 @@ export default function OrderList({ navigation }: Props) {
     };
 
     return (
-        <ScreenContainer>
+        <ScreenContainer scrollable={false}>
             <View style={styles.container}>
                 <View style={styles.header}>
                     <Text variant="titleLarge" style={styles.headerTitle}>Orders</Text>

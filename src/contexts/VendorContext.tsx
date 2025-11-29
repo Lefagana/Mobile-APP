@@ -239,156 +239,174 @@ export const VendorProvider: React.FC<VendorProviderProps> = ({ children }) => {
     };
 
     const updateVendorProfile = async (updates: Partial<Vendor>) => {
-        const action = async () => {
-            if (!vendor) throw new Error('No vendor profile to update.');
-            const updatedVendor = { ...vendor, ...updates, updated_at: new Date().toISOString() };
+        if (!vendor) throw new Error('No vendor profile to update.');
+        const updatedVendor = { ...vendor, ...updates, updated_at: new Date().toISOString() };
+
+        if (isOnline) {
             // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 500));
             setVendor(updatedVendor);
             cacheData(VENDOR_STORAGE.PROFILE, updatedVendor);
-        };
-        await queueAction(action, 'updateVendorProfile');
+        } else {
+            // Queue for later when back online
+            await queueAction('updateVendorProfile', { updates });
+            // Optimistic update
+            setVendor(updatedVendor);
+            cacheData(VENDOR_STORAGE.PROFILE, updatedVendor);
+        }
     };
 
     const initializeVendor = async (data: Partial<Vendor>) => {
-        const action = async () => {
-            const newVendor: Vendor = {
-                ...mockVendors[0], // Base from a mock for default values
-                id: `vend_${Date.now()}`,
-                user_id: user?.id || '',
-                shop_name: data.shop_name || 'New Shop',
-                business_type: data.business_type || 'individual',
-                business_email: data.business_email || user?.email || '',
-                business_phone: data.business_phone || user?.phone || '',
-                address_text: data.address_text || '',
-                kyc_status: 'pending',
-                is_active: false,
-                is_verified: false,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                ...data,
-            };
+        const newVendor: Vendor = {
+            ...mockVendors[0], // Base from a mock for default values
+            id: `vend_${Date.now()}`,
+            user_id: user?.id || '',
+            shop_name: data.shop_name || 'New Shop',
+            business_type: data.business_type || 'individual',
+            business_email: data.business_email || user?.email || '',
+            business_phone: data.business_phone || user?.phone || '',
+            address_text: data.address_text || '',
+            kyc_status: 'pending',
+            is_active: false,
+            is_verified: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            ...data,
+        };
+
+        if (isOnline) {
             // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 500));
-            setVendor(newVendor);
-            setStats(mockVendorStats); // Initialize with mock stats
-            setProducts([]); // New vendor starts with no products
-            setOrders([]); // New vendor starts with no orders
-            setSalesAnalytics(null);
-            setProductPerformance([]);
-            setCustomerInsights(null);
+        } else {
+            // Queue for later
+            await queueAction('initializeVendor', { vendorData: data });
+        }
 
-            await Promise.all([
-                cacheData(VENDOR_STORAGE.PROFILE, newVendor),
-                cacheData(VENDOR_STORAGE.STATS, mockVendorStats),
-                cacheData(VENDOR_STORAGE.PRODUCTS, []),
-                cacheData(VENDOR_STORAGE.ACTIVE_ORDERS, []),
-            ]);
-        };
-        await queueAction(action, 'initializeVendor');
+        // Update state (optimistic)
+        setVendor(newVendor);
+        setStats(mockVendorStats);
+        setProducts([]);
+        setOrders([]);
+        setSalesAnalytics(null);
+        setProductPerformance([]);
+        setCustomerInsights(null);
+
+        await Promise.all([
+            cacheData(VENDOR_STORAGE.PROFILE, newVendor),
+            cacheData(VENDOR_STORAGE.STATS, mockVendorStats),
+            cacheData(VENDOR_STORAGE.PRODUCTS, []),
+            cacheData(VENDOR_STORAGE.ACTIVE_ORDERS, []),
+        ]);
     };
 
     const addProduct = async (product: Partial<VendorProduct>) => {
-        const action = async () => {
-            if (!vendor?.id) throw new Error('Vendor ID not found');
+        if (!vendor?.id) throw new Error('Vendor ID not found');
 
-            if (isOnline) {
-                const newProduct = await api.vendors.products.create(vendor.id, product);
-                setProducts(prev => [...prev, newProduct]);
-                cacheData(VENDOR_STORAGE.PRODUCTS, [...products, newProduct]);
-            } else {
-                // Offline optimistic update
-                const newProduct: VendorProduct = {
-                    id: `prod_offline_${Date.now()}`,
-                    vendor_id: vendor.id,
-                    title: product.title || 'New Product',
-                    description: product.description || '',
-                    price: product.price || 0,
-                    category: product.category || 'Other',
-                    tags: product.tags || [],
-                    sku: product.sku || `SKU-${Date.now()}`,
-                    track_quantity: product.track_quantity ?? true,
-                    quantity: product.quantity || 0,
-                    low_stock_threshold: product.low_stock_threshold || 5,
-                    allow_backorders: product.allow_backorders ?? false,
-                    has_variants: product.has_variants ?? false,
-                    variants: product.variants || [],
-                    requires_shipping: product.requires_shipping ?? true,
-                    weight_kg: product.weight_kg,
-                    dimensions: product.dimensions,
-                    is_fragile: product.is_fragile ?? false,
-                    currency: product.currency || 'NGN',
-                    images: product.images || [],
-                    status: product.status || 'active',
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                    sales_count: 0,
-                    rating: 0,
-                    review_count: 0,
-                    views: 0,
-                    ...product,
-                } as VendorProduct;
+        if (isOnline) {
+            const newProduct = await api.vendors.products.create(vendor.id, product);
+            setProducts(prev => [...prev, newProduct]);
+            cacheData(VENDOR_STORAGE.PRODUCTS, [...products, newProduct]);
+        } else {
+            // Queue for later
+            await queueAction('addProduct', { vendorId: vendor.id, product });
 
-                setProducts(prev => [...prev, newProduct]);
-            }
-        };
-        await queueAction(action, 'addProduct');
+            // Offline optimistic update
+            const newProduct: VendorProduct = {
+                id: `prod_offline_${Date.now()}`,
+                vendor_id: vendor.id,
+                title: product.title || 'New Product',
+                description: product.description || '',
+                price: product.price || 0,
+                category: product.category || 'Other',
+                tags: product.tags || [],
+                sku: product.sku || `SKU-${Date.now()}`,
+                track_quantity: product.track_quantity ?? true,
+                quantity: product.quantity || 0,
+                low_stock_threshold: product.low_stock_threshold || 5,
+                allow_backorders: product.allow_backorders ?? false,
+                has_variants: product.has_variants ?? false,
+                variants: product.variants || [],
+                requires_shipping: product.requires_shipping ?? true,
+                weight_kg: product.weight_kg,
+                dimensions: product.dimensions,
+                is_fragile: product.is_fragile ?? false,
+                currency: product.currency || 'NGN',
+                images: product.images || [],
+                status: product.status || 'active',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                sales_count: 0,
+                rating: 0,
+                review_count: 0,
+                views: 0,
+                ...product,
+            } as VendorProduct;
+
+            setProducts(prev => [...prev, newProduct]);
+            cacheData(VENDOR_STORAGE.PRODUCTS, [...products, newProduct]);
+        }
     };
 
     const updateProduct = async (productId: string, updates: Partial<VendorProduct>) => {
-        const action = async () => {
-            if (!vendor?.id) throw new Error('Vendor ID not found');
+        if (!vendor?.id) throw new Error('Vendor ID not found');
 
-            if (isOnline) {
-                const updated = await api.vendors.products.update(vendor.id, productId, updates);
-                setProducts(prev => {
-                    const newProducts = prev.map(p => p.id === productId ? updated : p);
-                    cacheData(VENDOR_STORAGE.PRODUCTS, newProducts);
-                    return newProducts;
-                });
-            } else {
-                setProducts(prev => {
-                    const updated = prev.map(p =>
-                        p.id === productId ? { ...p, ...updates, updated_at: new Date().toISOString() } : p
-                    );
-                    cacheData(VENDOR_STORAGE.PRODUCTS, updated);
-                    return updated;
-                });
-            }
-        };
-        await queueAction(action, 'updateProduct');
+        if (isOnline) {
+            const updated = await api.vendors.products.update(vendor.id, productId, updates);
+            setProducts(prev => {
+                const newProducts = prev.map(p => p.id === productId ? updated : p);
+                cacheData(VENDOR_STORAGE.PRODUCTS, newProducts);
+                return newProducts;
+            });
+        } else {
+            // Queue for later
+            await queueAction('updateProduct', { vendorId: vendor.id, productId, updates });
+
+            // Optimistic update
+            setProducts(prev => {
+                const updated = prev.map(p =>
+                    p.id === productId ? { ...p, ...updates, updated_at: new Date().toISOString() } : p
+                );
+                cacheData(VENDOR_STORAGE.PRODUCTS, updated);
+                return updated;
+            });
+        }
     };
 
     const deleteProduct = async (productId: string) => {
-        const action = async () => {
-            if (!vendor?.id) throw new Error('Vendor ID not found');
+        if (!vendor?.id) throw new Error('Vendor ID not found');
 
-            if (isOnline) {
-                await api.vendors.products.delete(vendor.id, productId);
-            }
+        if (isOnline) {
+            await api.vendors.products.delete(vendor.id, productId);
+        } else {
+            // Queue for later
+            await queueAction('deleteProduct', { vendorId: vendor.id, productId });
+        }
 
-            setProducts(prev => {
-                const filtered = prev.filter(p => p.id !== productId);
-                cacheData(VENDOR_STORAGE.PRODUCTS, filtered);
-                return filtered;
-            });
-        };
-        await queueAction(action, 'deleteProduct');
+        // Optimistic update
+        setProducts(prev => {
+            const filtered = prev.filter(p => p.id !== productId);
+            cacheData(VENDOR_STORAGE.PRODUCTS, filtered);
+            return filtered;
+        });
     };
 
     const updateOrderStatus = async (orderId: string, status: VendorOrder['status']) => {
-        const action = async () => {
+        if (isOnline) {
             // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 500));
-            setOrders(prev => {
-                const updated = prev.map(order =>
-                    order.id === orderId ? { ...order, status, updated_at: new Date().toISOString() } : order
-                );
-                cacheData(VENDOR_STORAGE.ACTIVE_ORDERS, updated);
-                return updated;
-            });
-        };
-        await queueAction(action, 'updateOrderStatus');
+        } else {
+            // Queue for later
+            await queueAction('updateOrderStatus', { orderId, status });
+        }
+
+        // Optimistic update
+        setOrders(prev => {
+            const updated = prev.map(order =>
+                order.id === orderId ? { ...order, status, updated_at: new Date().toISOString() } : order
+            );
+            cacheData(VENDOR_STORAGE.ACTIVE_ORDERS, updated);
+            return updated;
+        });
     };
 
     // Effect to load vendor data when user changes or comes online
